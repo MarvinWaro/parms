@@ -8,10 +8,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
+import { useAppearance } from '@/hooks/use-appearance';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, MapPinCheckInside, Menu, Search, Moon, Sun, ScanHeart } from 'lucide-react';
+import { LayoutGrid, MapPinCheckInside, Menu, Moon, Sun, ScanHeart, Monitor } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
@@ -33,18 +34,7 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const rightNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
+// Removed rightNavItems - not needed yet
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -54,6 +44,40 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
+    const { appearance, updateAppearance } = useAppearance();
+
+    // Function to cycle through themes
+    const toggleTheme = () => {
+        switch (appearance) {
+            case 'light':
+                updateAppearance('dark');
+                break;
+            case 'dark':
+                updateAppearance('system');
+                break;
+            case 'system':
+                updateAppearance('light');
+                break;
+            default:
+                updateAppearance('dark');
+        }
+    };
+
+    // Get current icon and tooltip text based on appearance
+    const getThemeIcon = () => {
+        switch (appearance) {
+            case 'light':
+                return { icon: Sun, tooltip: 'Switch to Dark Mode' };
+            case 'dark':
+                return { icon: Moon, tooltip: 'Switch to System Mode' };
+            case 'system':
+                return { icon: Monitor, tooltip: 'Switch to Light Mode' };
+            default:
+                return { icon: Sun, tooltip: 'Toggle theme' };
+        }
+    };
+
+    const { icon: ThemeIcon, tooltip } = getThemeIcon();
 
     return (
         <>
@@ -76,30 +100,13 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                         <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
                                     </SheetHeader>
                                     <div className="flex h-full flex-1 flex-col space-y-4 p-4">
-                                        <div className="flex h-full flex-col justify-between text-sm">
-                                            <div className="flex flex-col space-y-4">
-                                                {mainNavItems.map((item) => (
-                                                    <Link key={item.title} href={item.href} className="flex items-center space-x-2 font-medium">
-                                                        {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
-                                                        <span>{item.title}</span>
-                                                    </Link>
-                                                ))}
-                                            </div>
-
-                                            <div className="flex flex-col space-y-4">
-                                                {rightNavItems.map((item) => (
-                                                    <a
-                                                        key={item.title}
-                                                        href={item.href}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center space-x-2 font-medium"
-                                                    >
-                                                        {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
-                                                        <span>{item.title}</span>
-                                                    </a>
-                                                ))}
-                                            </div>
+                                        <div className="flex flex-col space-y-4">
+                                            {mainNavItems.map((item) => (
+                                                <Link key={item.title} href={item.href} className="flex items-center space-x-2 font-medium">
+                                                    {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
+                                                    <span>{item.title}</span>
+                                                </Link>
+                                            ))}
                                         </div>
                                     </div>
                                 </SheetContent>
@@ -108,12 +115,12 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
                         {/* Logo and System Title */}
                         <Link href="/dashboard" prefetch className="flex items-center space-x-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
-                                <AppLogoIcon className="h-6 w-6 fill-current text-white" />
+                            <div className="flex  items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+                                <AppLogoIcon className="h-10 w-10 fill-current text-white" />
                             </div>
                             <div className="hidden sm:block">
                                 <div className="text-lg font-bold tracking-tight">PARMS</div>
-                                <div className="text-xs text-blue-100 font-medium">Para Sa Mga Sawi</div>
+                                <div className="text-xs text-blue-100 font-medium">Property and Assets Registry Management System</div>
                             </div>
                         </Link>
                     </div>
@@ -128,56 +135,17 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                         variant="ghost"
                                         size="icon"
                                         className="h-9 w-9 text-white hover:bg-white/10 transition-colors"
+                                        onClick={toggleTheme}
                                     >
-                                        <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                                        <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                                        <ThemeIcon className="h-4 w-4" />
                                         <span className="sr-only">Toggle theme</span>
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p>Toggle theme</p>
+                                    <p>{tooltip}</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-
-                        {/* Search */}
-                        <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/10 transition-colors">
-                                        <Search className="h-4 w-4" />
-                                        <span className="sr-only">Search</span>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Search</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-
-                        {/* External Links */}
-                        <div className="hidden lg:flex items-center space-x-1">
-                            {rightNavItems.map((item) => (
-                                <TooltipProvider key={item.title} delayDuration={0}>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <a
-                                                href={item.href}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-white hover:bg-white/10 transition-colors"
-                                            >
-                                                <span className="sr-only">{item.title}</span>
-                                                {item.icon && <Icon iconNode={item.icon} className="h-4 w-4" />}
-                                            </a>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>{item.title}</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            ))}
-                        </div>
 
                         {/* User Menu */}
                         <DropdownMenu>
