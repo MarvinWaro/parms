@@ -82,8 +82,8 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     return (
         <>
             {/* Main Header */}
-            <div className="bg-gradient-to-r from-[#1C352D] to-[#2a4a3a] text-white shadow-lg">
-                <div className="mx-auto  flex h-16 items-center justify-between px-6">
+            <div className="bg-gradient-to-r from-[#222831] to-[#222831] text-white shadow-lg">
+                <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-6">
                     {/* Left Section - Logo and Title */}
                     <div className="flex items-center space-x-4">
                         {/* Mobile Menu */}

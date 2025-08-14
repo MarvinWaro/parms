@@ -2,6 +2,7 @@ import AppLayoutTemplate from '@/layouts/app/app-header-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type ReactNode } from 'react';
 import { Toaster } from '@/components/ui/sonner';
+import Footer from '@/components/footer';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -21,8 +22,10 @@ export default ({ children, breadcrumbs, ...props }: AppLayoutProps) => (
             closeButton={true}
             toastOptions={{
                 duration: 4000,
-                
+
             }}
         />
+
+        <Footer />
     </div>
 );
