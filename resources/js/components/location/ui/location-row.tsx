@@ -12,20 +12,15 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { toast } from "sonner";
 import { useForm } from "@inertiajs/react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 interface LocationRowTemplateProps {
     index: number;
@@ -35,7 +30,6 @@ interface LocationRowTemplateProps {
 export default function LocationRowTemplate({ row, index }: LocationRowTemplateProps) {
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
-
 
     const {
         data,
@@ -52,11 +46,6 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
         setOpenEdit(true);
     }
 
-    function openDeleteFor(row: Row) {
-        setOpenDelete(true);
-    }
-
-
     function handleEditSubmit(e: FormEvent) {
         e.preventDefault();
         setOpenEdit(false);
@@ -69,7 +58,6 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
             });
         });
 
-        // Clean and simple - colors applied automatically!
         toast.promise(promise, {
             loading: 'Updating location...',
             success: 'Location updated successfully!',
@@ -77,7 +65,6 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
             duration: 2000,
         });
     }
-
 
     function handleDeleteConfirm() {
         setOpenDelete(false);
@@ -90,7 +77,6 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
             });
         });
 
-        // Automatically gets the global styling!
         toast.promise(promise, {
             loading: 'Deleting location...',
             success: 'Location deleted successfully!',
@@ -130,18 +116,61 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
                         >
                             <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Delete location"
-                            onClick={() => openDeleteFor(row)}
-                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-destructive hover:bg-destructive/10 hover:scale-105"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+
+                        {/* Delete Popover */}
+                        <Popover open={openDelete} onOpenChange={setOpenDelete}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    title="Delete location"
+                                    className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-destructive hover:bg-destructive/10 hover:scale-105"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-0" align="end" side="bottom">
+                                <div className="p-4 space-y-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 flex-shrink-0 mt-0.5">
+                                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                                        </div>
+                                        <div className="space-y-1 flex-1">
+                                            <h4 className="text-sm font-medium text-foreground">Delete location</h4>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                Delete "{row.location}"? This action cannot be undone.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 pt-1">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setOpenDelete(false)}
+                                            disabled={processing}
+                                            className="flex-1 h-8 text-xs"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={handleDeleteConfirm}
+                                            disabled={processing}
+                                            className="flex-1 h-8 text-xs"
+                                        >
+                                            {processing ? 'Deleting…' : 'Delete'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </TableCell>
             </TableRow>
+
+            {/* Edit Dialog */}
             <Dialog open={openEdit} onOpenChange={(v) => { setOpenEdit(v) }}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -185,37 +214,6 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
                     </form>
                 </DialogContent>
             </Dialog>
-            <AlertDialog open={openDelete} onOpenChange={setOpenDelete}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10">
-                                <AlertTriangle className="h-4 w-4 text-destructive" />
-                            </div>
-                            Delete Location
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="leading-relaxed">
-                            Are you sure you want to delete "{row?.location}"?
-                            This action cannot be undone and will permanently remove this location from your records.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setOpenDelete(false)} disabled={processing}>
-                            Cancel
-                        </AlertDialogCancel>
-                        {/* Use asChild to render a Button with proper destructive styles */}
-                        <AlertDialogAction asChild>
-                            <Button
-                                variant="destructive"
-                                onClick={handleDeleteConfirm}
-                                disabled={processing}
-                            >
-                                {processing ? 'Deleting…' : 'Delete'}
-                            </Button>
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </>
     )
 }
