@@ -57,7 +57,6 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
 
     function handleEditSubmit(e: FormEvent) {
         e.preventDefault();
-
         setOpenEdit(false);
 
         const promise = new Promise<void>((resolve, reject) => {
@@ -72,16 +71,12 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
             });
         });
 
+        // Clean and simple - uses global styling!
         toast.promise(promise, {
             loading: 'Updating condition...',
             success: 'Condition updated successfully!',
             error: (message) => message,
             duration: 2000,
-            classNames: {
-                success: '!bg-green-200 !text-green-700 !border-green-300',
-                error: '!bg-red-200 !text-red-700 !border-red-300',
-                loading: '!bg-blue-200 !text-blue-700 !border-blue-300',
-            },
         });
     }
 
@@ -100,16 +95,12 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
             });
         });
 
+        // Clean and simple - uses global styling!
         toast.promise(promise, {
             loading: 'Deleting condition...',
             success: 'Condition deleted successfully!',
             error: (message) => message,
             duration: 2000,
-            classNames: {
-                success: '!bg-green-600 !text-white !border-green-600',
-                error: '!bg-red-600 !text-white !border-red-600',
-                loading: '!bg-blue-200 !text-blue-700 !border-blue-300',
-            },
         });
     }
 
