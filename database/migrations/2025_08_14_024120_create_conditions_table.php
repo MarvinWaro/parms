@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('conditions', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
+            $table->string('condition');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

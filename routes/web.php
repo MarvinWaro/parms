@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\ConditionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -15,10 +16,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/location/{location}', [LocationController::class, 'update'])->name('location.update');
     Route::delete('/location/{location}', [LocationController::class, 'destroy'])->name('location.destroy');
 
-    // Route::get('/condition', [ConditionController::class, 'index'])->name('condition.index');
-    // Route::post('/condition', [ConditionController::class, 'store'])->name('condition.store');
-    // Route::patch('/condition/{condition}', [ConditionController::class, 'update'])->name('condition.update');
-    // Route::delete('/condition/{condition}', [ConditionController::class, 'destroy'])->name('condition.destroy');
+    // Condition routes
+    Route::get('/condition', [ConditionController::class, 'index'])->name('condition.index');
+    Route::post('/condition', [ConditionController::class, 'store'])->name('condition.store');
+    Route::patch('/condition/{condition}', [ConditionController::class, 'update'])->name('condition.update');
+    Route::delete('/condition/{condition}', [ConditionController::class, 'destroy'])->name('condition.destroy');
 });
 
 require __DIR__.'/settings.php';
