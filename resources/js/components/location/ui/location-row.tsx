@@ -59,31 +59,22 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
 
     function handleEditSubmit(e: FormEvent) {
         e.preventDefault();
-
         setOpenEdit(false);
 
         const promise = new Promise<void>((resolve, reject) => {
             patch(`/location/${row.id}`, {
                 preserveScroll: true,
-                onSuccess: () => {
-                    resolve();
-                },
-                onError: () => {
-                    reject('Failed to update location. Please try again.');
-                },
+                onSuccess: () => resolve(),
+                onError: () => reject('Failed to update location. Please try again.'),
             });
         });
 
+        // Clean and simple - colors applied automatically!
         toast.promise(promise, {
             loading: 'Updating location...',
             success: 'Location updated successfully!',
             error: (message) => message,
             duration: 2000,
-            classNames: {
-                success: '!bg-green-600 !text-white !border-green-600',
-                error: '!bg-red-600 !text-white !border-red-600',
-                loading: '!bg-blue-600 !text-white !border-blue-600',
-            },
         });
     }
 
@@ -94,25 +85,17 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
         const promise = new Promise<void>((resolve, reject) => {
             deleteRequest(`/location/${row.id}`, {
                 preserveScroll: true,
-                onSuccess: () => {
-                    resolve();
-                },
-                onError: () => {
-                    reject('Failed to delete location. Please try again.');
-                },
+                onSuccess: () => resolve(),
+                onError: () => reject('Failed to delete location. Please try again.'),
             });
         });
 
+        // Automatically gets the global styling!
         toast.promise(promise, {
             loading: 'Deleting location...',
             success: 'Location deleted successfully!',
             error: (message) => message,
             duration: 2000,
-            classNames: {
-                success: '!bg-green-600 !text-white !border-green-600',
-                error: '!bg-red-600 !text-white !border-red-600',
-                loading: '!bg-blue-600 !text-white !border-blue-600',
-            },
         });
     }
 

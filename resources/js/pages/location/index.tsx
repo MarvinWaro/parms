@@ -62,25 +62,17 @@ export default function LocationIndex() {
         const promise = new Promise<void>((resolve, reject) => {
             post(route('location.store'), {
                 preserveScroll: true,
-                onSuccess: () => {
-                    resolve();
-                },
-                onError: () => {
-                    reject('Failed to create location. Please try again.');
-                },
+                onSuccess: () => resolve(),
+                onError: () => reject('Failed to create location. Please try again.'),
             });
         });
 
+        // Much cleaner - no more classNames needed!
         toast.promise(promise, {
             loading: 'Creating location...',
             success: 'Location created successfully!',
             error: (message) => message,
             duration: 2000,
-            classNames: {
-                success: '!bg-green-600 !text-white !border-green-600',
-                error: '!bg-red-600 !text-white !border-red-600',
-                loading: '!bg-blue-600 !text-white !border-blue-600',
-            },
         });
 
         promise.finally(() => {
@@ -88,7 +80,6 @@ export default function LocationIndex() {
             setOpenCreate(false);
         });
     }
-
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -149,7 +140,7 @@ export default function LocationIndex() {
                                             <Button type="button" variant="outline" onClick={() => { setOpenCreate(false); reset(); }} disabled={processing}>
                                                 Cancel
                                             </Button>
-                                            <Button type="submit" disabled={processing} className="min-w-[80px]">
+                                            <Button type="submit" disabled={processing || !data.location} className="min-w-[80px]">
                                                 {processing ? 'Saving…' : 'Save'}
                                             </Button>
                                         </DialogFooter>

@@ -1,7 +1,7 @@
 import AppLayoutTemplate from '@/layouts/app/app-header-layout';
 import { type BreadcrumbItem } from '@/types';
 import { type ReactNode } from 'react';
-import { Toaster } from '@/components/ui/sonner'; // Use your custom Toaster
+import { Toaster } from '@/components/ui/sonner';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -15,13 +15,13 @@ export default ({ children, breadcrumbs, ...props }: AppLayoutProps) => (
         </AppLayoutTemplate>
         <Toaster
             position="bottom-right"
-            expand={false}        // This creates the stacked effect
-            visibleToasts={4}     // Show max 4 toasts at once
-            richColors={false}    // Disable richColors to use our custom styling
+            expand={false}
+            visibleToasts={4}
+            richColors={false}
             closeButton={true}
             toastOptions={{
                 duration: 4000,
-                className: "toast-custom",
+                
             }}
         />
     </div>

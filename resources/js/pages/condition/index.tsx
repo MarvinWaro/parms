@@ -59,35 +59,20 @@ export default function ConditionIndex() {
     function handleCreateSubmit(e: FormEvent) {
         e.preventDefault();
 
-        // Make sure we're not submitting empty data
-        if (!data.condition || data.condition.trim() === '') {
-            console.error('Condition field is empty!');
-            return;
-        }
-
         const promise = new Promise<void>((resolve, reject) => {
             post(route('condition.store'), {
                 preserveScroll: true,
-                onSuccess: () => {
-                    resolve();
-                },
-                onError: (errors) => {
-                    console.error('Submission errors:', errors);
-                    reject('Failed to create condition. Please try again.');
-                },
+                onSuccess: () => resolve(),
+                onError: () => reject('Failed to create condition. Please try again.'),
             });
         });
 
+        // Much cleaner - no more classNames needed!
         toast.promise(promise, {
             loading: 'Creating condition...',
-            success: 'Condition created successfully!',
+            success: 'condition created successfully!',
             error: (message) => message,
             duration: 2000,
-            classNames: {
-                success: '!bg-green-200 !text-green-700 !border-green-300',
-                error: '!bg-red-200 !text-red-700 !border-red-300',
-                loading: '!bg-blue-200 !text-blue-700 !border-blue-300',
-            },
         });
 
         promise.finally(() => {
