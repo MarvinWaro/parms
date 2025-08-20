@@ -91,7 +91,7 @@ export default function LocationIndex() {
                     <div className="space-y-2 px-6 pt-6">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                                <h1 className="text-3xl font-bold tracking-tight text-foreground">Locations / Whereabouts</h1>
+                                <h5 className="text-xl font-bold tracking-tight text-foreground">Locations / Whereabouts</h5>
                                 <p className="text-sm text-muted-foreground">Manage your office locations and departments</p>
                             </div>
 

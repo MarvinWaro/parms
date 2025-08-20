@@ -1,6 +1,7 @@
 // resources/js/Components/app-logo.tsx
 import AppLogoIcon from './app-logo-icon';
 
+
 export default function AppLogo() {
     return (
         // Full-width row, centered content

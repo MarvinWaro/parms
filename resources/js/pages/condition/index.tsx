@@ -91,7 +91,7 @@ export default function ConditionIndex() {
                     <div className="space-y-2 px-6 pt-6">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                                <h1 className="text-3xl font-bold tracking-tight text-foreground">Asset Conditions</h1>
+                                <h5 className="text-xl font-bold tracking-tight text-foreground">Asset Conditions</h5>
                                 <p className="text-sm text-muted-foreground">Manage asset condition statuses</p>
                             </div>
 

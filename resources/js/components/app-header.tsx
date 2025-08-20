@@ -12,7 +12,7 @@ import { useAppearance } from '@/hooks/use-appearance';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, MapPinCheckInside, Menu, Moon, Sun, ScanHeart, Monitor } from 'lucide-react';
+import { LayoutGrid, MapPinCheckInside, Menu, Moon, Sun, ScanHeart, Monitor, Laptop } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
@@ -31,6 +31,11 @@ const mainNavItems: NavItem[] = [
         title: 'Conditions',
         href: '/condition',
         icon: ScanHeart,
+    },
+    {
+        title: 'Properties',
+        href: '/property',
+        icon: Laptop,
     },
 ];
 
@@ -82,7 +87,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     return (
         <>
             {/* Main Header */}
-            <div className="bg-gradient-to-r from-[#222831] to-[#222831] text-white shadow-lg">
+            <div className="bg-gradient-to-r from-[#1E3A8A] to-[#1E3A8A] text-white shadow-lg">
                 <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-6">
                     {/* Left Section - Logo and Title */}
                     <div className="flex items-center space-x-4">
