@@ -5,7 +5,6 @@ import { type BreadcrumbItem } from '@/types';
 import {
     Table,
     TableBody,
-    TableCell,
     TableHead,
     TableHeader,
     TableRow,
@@ -32,8 +31,9 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Plus, Search, Pencil, Trash2, Package } from 'lucide-react';
+import { Plus, Search, Package } from 'lucide-react';
 import { useState, FormEvent } from 'react';
+import PropertyRowTemplate from '@/components/property/ui/property-row';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Property', href: '/property' }];
 
@@ -44,6 +44,18 @@ type PropertyRow = {
     location: string;
     condition: string;
     acquisition_cost: number | null;
+    serial_no?: string;
+    model_no?: string;
+    acquisition_date?: string;
+    unit_of_measure?: string;
+    quantity_per_physical_count?: number;
+    fund?: string;
+    location_id?: string;
+    user_id?: string;
+    condition_id?: string;
+    item_description?: string;
+    remarks?: string;
+    color?: string;
 };
 
 type DropdownOption = {
@@ -95,7 +107,7 @@ export default function PropertyIndex() {
 
     const clearForm = () => {
         setData(initialForm);
-        clearErrors?.(); // if you're using clearErrors from useForm
+        clearErrors?.();
     };
 
     const filteredRows = properties.filter((r) => {
@@ -112,7 +124,6 @@ export default function PropertyIndex() {
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
 
-        // normalize before submit so "nullable" passes
         setData({
             ...data,
             acquisition_cost: data.acquisition_cost === '' ? '' : String(parseFloat(String(data.acquisition_cost))),
@@ -144,18 +155,17 @@ export default function PropertyIndex() {
         });
 
         promise.then(() => {
-            clearForm();               // ✅ clear first so fade-out shows blanks
-            setOpenCreate(false);      // then close (animation uses cleared values)
-            // reset();               // optional now, clearForm already did it
+            clearForm();
+            setOpenCreate(false);
         });
     };
 
     const handleOpenChange = (open: boolean) => {
         setOpenCreate(open);
         if (open) {
-            clearForm();          // also clear when opening
+            clearForm();
         } else {
-            reset();              // and clear when closing
+            reset();
         }
     };
 
@@ -544,32 +554,16 @@ export default function PropertyIndex() {
                                     </TableHeader>
 
                                     <TableBody>
-                                        {filteredRows.map((row) => (
-                                            <TableRow key={row.id}>
-                                                <TableCell className="px-6 py-4 align-middle">
-                                                    <div className="font-medium">{row.item_name}</div>
-                                                    <div className="text-xs text-muted-foreground">{row.property_number}</div>
-                                                </TableCell>
-                                                <TableCell className="px-6 py-4 align-middle">
-                                                    {row.location}
-                                                </TableCell>
-                                                <TableCell className="px-6 py-4 align-middle">
-                                                    <Badge variant="outline">{row.condition}</Badge>
-                                                </TableCell>
-                                                <TableCell className="px-6 py-4 text-right align-middle tabular-nums">
-                                                    {row.acquisition_cost !== null ? peso.format(row.acquisition_cost) : '—'}
-                                                </TableCell>
-                                                <TableCell className="px-6 py-4 text-right align-middle">
-                                                    <div className="inline-flex items-center gap-1.5">
-                                                        <Button size="icon" variant="ghost" disabled>
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button size="icon" variant="ghost" disabled>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
+                                        {filteredRows.map((row, index) => (
+                                            <PropertyRowTemplate
+                                                key={row.id}
+                                                row={row}
+                                                index={index}
+                                                locations={locations}
+                                                users={users}
+                                                conditions={conditions}
+                                                funds={funds}
+                                            />
                                         ))}
                                     </TableBody>
                                 </Table>

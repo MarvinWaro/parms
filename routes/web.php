@@ -26,6 +26,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Property routes
     Route::get('/property', [PropertyController::class, 'index'])->name('properties.index');
     Route::post('/property', [PropertyController::class, 'store'])->name('properties.store');
+    Route::patch('/property/{property}', [PropertyController::class, 'update'])->name('properties.update');
+    Route::delete('/property/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
 });
 
 require __DIR__.'/settings.php';
