@@ -1,17 +1,18 @@
 // resources/js/Components/app-logo-icon.tsx
 import { ComponentProps } from 'react';
+import { Image } from "@unpic/react";
 
 export default function AppLogoIcon({
-    className = 'h-8 w-8',
-    ...props
+    className = 'h-8 w-8'
 }: ComponentProps<'img'>) {
     return (
-        <img
+        <Image
             src="/assets/img/ched-logo.png"
             alt="CHED logo"
             className={`object-contain ${className}`}
-            draggable={false}
-            {...props}
+            layout="constrained"
+            width={400}
+            height={300}
         />
     );
 }

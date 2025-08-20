@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ConditionController;
+use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -21,6 +22,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/condition', [ConditionController::class, 'store'])->name('condition.store');
     Route::patch('/condition/{condition}', [ConditionController::class, 'update'])->name('condition.update');
     Route::delete('/condition/{condition}', [ConditionController::class, 'destroy'])->name('condition.destroy');
+
+    // Property routes
+    Route::get('/property', [PropertyController::class, 'index'])->name('properties.index');
+    Route::post('/property', [PropertyController::class, 'store'])->name('properties.store');
 });
 
 require __DIR__.'/settings.php';
