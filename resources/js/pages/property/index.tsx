@@ -90,13 +90,12 @@ export default function PropertyIndex() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [openCreate, setOpenCreate] = useState(false);
-    const [formKey, setFormKey] = useState(0); // used to force remount
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm(initialForm);
 
     const clearForm = () => {
         setData(initialForm);
-        clearErrors();
+        clearErrors?.(); // if you're using clearErrors from useForm
     };
 
     const filteredRows = properties.filter((r) => {
@@ -145,10 +144,9 @@ export default function PropertyIndex() {
         });
 
         promise.then(() => {
-            setOpenCreate(false);
-            clearForm();          // clear all fields
-            reset();
-            setFormKey((k) => k + 1);   // 🔁 force <DialogContent> remount for Selects
+            clearForm();               // ✅ clear first so fade-out shows blanks
+            setOpenCreate(false);      // then close (animation uses cleared values)
+            // reset();               // optional now, clearForm already did it
         });
     };
 
@@ -176,7 +174,7 @@ export default function PropertyIndex() {
                             </div>
 
                             {/* Create modal */}
-                            <Dialog open={openCreate} onOpenChange={handleOpenChange}>
+                            <Dialog open={openCreate} onOpenChange={(v) => {if (!v) clearForm(); setOpenCreate(v);}}>
                                 <DialogTrigger asChild>
                                     <Button size="default" className="shadow-sm">
                                         <Plus className="mr-2 h-4 w-4" />
@@ -476,7 +474,7 @@ export default function PropertyIndex() {
                                             <Button
                                                 type="button"
                                                 variant="outline"
-                                                onClick={() => handleOpenChange(false)}
+                                                onClick={() => { clearForm(); setOpenCreate(false); }}
                                                 disabled={processing}
                                             >
                                                 Cancel
