@@ -13,6 +13,7 @@ import {
 import { ArrowLeft, Package, Calendar, DollarSign, MapPin, User, Wrench, Palette, Pencil, Trash2, Printer, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import EditPropertyModal from '@/components/property/ui/edit-property-modal';
 
 type PropertyData = {
     id: string;
@@ -31,22 +32,40 @@ type PropertyData = {
     location: string;
     user: string;
     condition: string;
+    location_id?: string;
+    user_id?: string;
+    condition_id?: string;
     created_at: string;
     updated_at: string;
 };
 
+type DropdownOption = {
+    id: string;
+    name: string;
+};
+
+type FundOption = {
+    value: string;
+    label: string;
+};
+
 type PageProps = {
     property: PropertyData;
+    locations: DropdownOption[];
+    users: DropdownOption[];
+    conditions: DropdownOption[];
+    funds: FundOption[];
 };
 
 const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 2 });
 
 export default function PropertyShow() {
     const { props } = usePage<PageProps>();
-    const { property } = props;
+    const { property, locations, users, conditions, funds } = props;
     const [openDelete, setOpenDelete] = useState(false);
+    const [openEdit, setOpenEdit] = useState(false);
 
-    const { delete: deleteRequest, processing } = useForm();
+    const { delete: deleteRequest, processing: deleteProcessing } = useForm();
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Property', href: '/property' },
@@ -302,12 +321,14 @@ export default function PropertyShow() {
                                         <CardTitle>Quick Actions</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-2">
-                                        <Link href={route('properties.index')}>
-                                            <Button variant="outline" className="w-full justify-start">
-                                                <Pencil className="h-4 w-4 mr-2" />
-                                                Edit Property
-                                            </Button>
-                                        </Link>
+                                        <Button
+                                            variant="outline"
+                                            className="w-full justify-start"
+                                            onClick={() => setOpenEdit(true)}
+                                        >
+                                            <Pencil className="h-4 w-4 mr-2" />
+                                            Edit Property
+                                        </Button>
 
                                         <Button
                                             variant="outline"
@@ -348,7 +369,7 @@ export default function PropertyShow() {
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => setOpenDelete(false)}
-                                                            disabled={processing}
+                                                            disabled={deleteProcessing}
                                                             className="flex-1 h-8 text-xs"
                                                         >
                                                             Cancel
@@ -357,10 +378,10 @@ export default function PropertyShow() {
                                                             variant="destructive"
                                                             size="sm"
                                                             onClick={handleDeleteConfirm}
-                                                            disabled={processing}
+                                                            disabled={deleteProcessing}
                                                             className="flex-1 h-8 text-xs"
                                                         >
-                                                            {processing ? 'Deleting…' : 'Delete'}
+                                                            {deleteProcessing ? 'Deleting…' : 'Delete'}
                                                         </Button>
                                                     </div>
                                                 </div>
@@ -373,6 +394,22 @@ export default function PropertyShow() {
                     </div>
                 </div>
             </div>
+
+            {/* Shared Edit Modal */}
+            <EditPropertyModal
+                open={openEdit}
+                onOpenChange={setOpenEdit}
+                property={property}
+                locations={locations}
+                users={users}
+                conditions={conditions}
+                funds={funds}
+                source="show" // Explicitly set source to 'show' for show page edits
+                onSuccess={() => {
+                    // Optional: Add any specific success handling for show page
+                    // The shared modal already handles toast notifications
+                }}
+            />
         </AppLayout>
     );
 }

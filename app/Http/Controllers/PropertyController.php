@@ -164,10 +164,20 @@ class PropertyController extends Controller
             'item_description' => ['nullable','string'],
             'remarks' => ['nullable','string'],
             'color' => ['nullable','string','max:7','regex:/^#[0-9A-Fa-f]{6}$/'],
+            'source' => ['nullable','string','in:index,show'], // Add source validation
         ]);
 
         $property->update($validated);
 
+        // Determine redirect based on source parameter
+        $source = $request->input('source', 'index'); // Default to index if not specified
+
+        if ($source === 'show') {
+            return redirect()->route('properties.show', $property->id)
+                ->with('success', 'Property updated successfully.');
+        }
+
+        // Default behavior - redirect to index (for table edits)
         return redirect()->route('properties.index')
             ->with('success', 'Property updated successfully.');
     }
@@ -176,13 +186,35 @@ class PropertyController extends Controller
     {
         $property->load(['location', 'user', 'condition']);
 
+        // Get dropdown data for edit modal
+        $locations = Location::all()->map(function($location) {
+            return [
+                'id' => $location->id,
+                'name' => $location->location
+            ];
+        });
+
+        $conditions = Condition::all()->map(function($condition) {
+            return [
+                'id' => $condition->id,
+                'name' => $condition->condition
+            ];
+        });
+
+        $users = User::select('id', 'name')->orderBy('name')->get();
+
+        $funds = [
+            ['value' => 'Fund 101', 'label' => 'Fund 101'],
+            ['value' => 'Fund 151', 'label' => 'Fund 151'],
+        ];
+
         $propertyData = [
             'id' => $property->id,
             'property_number' => $property->property_number,
             'item_name' => $property->item_name,
             'serial_no' => $property->serial_no,
             'model_no' => $property->model_no,
-            'acquisition_date' => $property->acquisition_date?->format('F j, Y'),
+            'acquisition_date' => $property->acquisition_date?->format('Y-m-d'),
             'acquisition_cost' => $property->acquisition_cost,
             'unit_of_measure' => $property->unit_of_measure,
             'quantity_per_physical_count' => $property->quantity_per_physical_count,
@@ -193,12 +225,19 @@ class PropertyController extends Controller
             'location' => $property->location->location ?? 'N/A',
             'user' => $property->user->name ?? 'N/A',
             'condition' => $property->condition->condition ?? 'N/A',
+            'location_id' => $property->location_id,
+            'user_id' => $property->user_id,
+            'condition_id' => $property->condition_id,
             'created_at' => $property->created_at->format('F j, Y g:i A'),
             'updated_at' => $property->updated_at->format('F j, Y g:i A'),
         ];
 
         return Inertia::render('property/show', [
             'property' => $propertyData,
+            'locations' => $locations,
+            'users' => $users,
+            'conditions' => $conditions,
+            'funds' => $funds,
         ]);
     }
 
