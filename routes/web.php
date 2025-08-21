@@ -23,9 +23,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/condition/{condition}', [ConditionController::class, 'update'])->name('condition.update');
     Route::delete('/condition/{condition}', [ConditionController::class, 'destroy'])->name('condition.destroy');
 
-    // Property routes
+    // Property routes (recommended order)
     Route::get('/property', [PropertyController::class, 'index'])->name('properties.index');
     Route::post('/property', [PropertyController::class, 'store'])->name('properties.store');
+    Route::get('/property/{property}', [PropertyController::class, 'show'])->name('properties.show');  // Move this up
     Route::patch('/property/{property}', [PropertyController::class, 'update'])->name('properties.update');
     Route::delete('/property/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
 });
