@@ -99,7 +99,10 @@ class PropertyController extends Controller
                 'nullable','string','max:255',
                 Rule::unique('properties', 'property_number')->whereNull('deleted_at'),
             ],
-            'serial_no' => ['nullable','string','max:255'],
+            'serial_no' => [
+                'nullable','string','max:255',
+                Rule::unique('properties', 'serial_no')->whereNull('deleted_at')->whereNotNull('serial_no'),
+            ],
             'model_no' => ['nullable','string','max:255'],
             'acquisition_date' => ['nullable','date'],
             'acquisition_cost' => ['nullable','numeric','min:0','max:999999999999.99'],
@@ -145,7 +148,10 @@ class PropertyController extends Controller
                 'nullable','string','max:255',
                 Rule::unique('properties', 'property_number')->ignore($property->id)->whereNull('deleted_at'),
             ],
-            'serial_no' => ['nullable','string','max:255'],
+            'serial_no' => [
+                'nullable','string','max:255',
+                Rule::unique('properties', 'serial_no')->ignore($property->id)->whereNull('deleted_at')->whereNotNull('serial_no'),
+            ],
             'model_no' => ['nullable','string','max:255'],
             'acquisition_date' => ['nullable','date'],
             'acquisition_cost' => ['nullable','numeric','min:0','max:999999999999.99'],
@@ -164,6 +170,36 @@ class PropertyController extends Controller
 
         return redirect()->route('properties.index')
             ->with('success', 'Property updated successfully.');
+    }
+
+    public function show(Property $property): Response
+    {
+        $property->load(['location', 'user', 'condition']);
+
+        $propertyData = [
+            'id' => $property->id,
+            'property_number' => $property->property_number,
+            'item_name' => $property->item_name,
+            'serial_no' => $property->serial_no,
+            'model_no' => $property->model_no,
+            'acquisition_date' => $property->acquisition_date?->format('F j, Y'),
+            'acquisition_cost' => $property->acquisition_cost,
+            'unit_of_measure' => $property->unit_of_measure,
+            'quantity_per_physical_count' => $property->quantity_per_physical_count,
+            'fund' => $property->fund,
+            'item_description' => $property->item_description,
+            'remarks' => $property->remarks,
+            'color' => $property->color,
+            'location' => $property->location->location ?? 'N/A',
+            'user' => $property->user->name ?? 'N/A',
+            'condition' => $property->condition->condition ?? 'N/A',
+            'created_at' => $property->created_at->format('F j, Y g:i A'),
+            'updated_at' => $property->updated_at->format('F j, Y g:i A'),
+        ];
+
+        return Inertia::render('property/show', [
+            'property' => $propertyData,
+        ]);
     }
 
     public function destroy(Property $property): RedirectResponse

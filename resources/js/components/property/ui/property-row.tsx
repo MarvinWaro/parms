@@ -24,7 +24,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import { AlertTriangle, Package, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, Package, Pencil, Trash2, Eye } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { useForm } from "@inertiajs/react";
@@ -98,7 +98,7 @@ export default function PropertyRowTemplate({
         serial_no: row.serial_no || '',
         model_no: row.model_no || '',
         acquisition_date: row.acquisition_date || '',
-        acquisition_cost: row.acquisition_cost?.toString() || '',
+        acquisition_cost: row.acquisition_cost !== null ? row.acquisition_cost.toString() : '',
         unit_of_measure: row.unit_of_measure || '',
         quantity_per_physical_count: row.quantity_per_physical_count?.toString() || '1',
         fund: row.fund || '',
@@ -137,7 +137,7 @@ export default function PropertyRowTemplate({
         e.preventDefault();
 
         const promise = new Promise<void>((resolve, reject) => {
-            patch(`/property/${row.id}`, {
+            patch(route('properties.update', row.id), {
                 preserveScroll: true,
                 onSuccess: () => resolve(),
                 onError: () => reject('Failed to update property. Please try again.'),
@@ -160,7 +160,7 @@ export default function PropertyRowTemplate({
         setOpenDelete(false);
 
         const promise = new Promise<void>((resolve, reject) => {
-            deleteRequest(`/property/${row.id}`, {
+            deleteRequest(route('properties.destroy', row.id), {
                 preserveScroll: true,
                 onSuccess: () => resolve(),
                 onError: () => reject('Failed to delete property. Please try again.'),
@@ -204,6 +204,15 @@ export default function PropertyRowTemplate({
                 </TableCell>
                 <TableCell className="px-6 py-4 text-right align-middle">
                     <div className="flex items-center justify-end gap-1">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            title="View property"
+                            onClick={() => window.location.href = route('properties.show', row.id)}
+                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-muted/60 hover:scale-105"
+                        >
+                            <Eye className="h-4 w-4" />
+                        </Button>
                         <Button
                             variant="ghost"
                             size="sm"
