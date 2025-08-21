@@ -164,13 +164,15 @@ class PropertyController extends Controller
             'item_description' => ['nullable','string'],
             'remarks' => ['nullable','string'],
             'color' => ['nullable','string','max:7','regex:/^#[0-9A-Fa-f]{6}$/'],
+            'source' => ['nullable','string','in:index,show'], // Add source validation
         ]);
 
         $property->update($validated);
 
-        // Check if request came from show page (has 'only' parameter indicating partial reload)
-        if ($request->header('X-Inertia-Partial-Component') || $request->header('X-Inertia-Partial-Data')) {
-            // Stay on show page if edited from there
+        // Determine redirect based on source parameter
+        $source = $request->input('source', 'index'); // Default to index if not specified
+
+        if ($source === 'show') {
             return redirect()->route('properties.show', $property->id)
                 ->with('success', 'Property updated successfully.');
         }
