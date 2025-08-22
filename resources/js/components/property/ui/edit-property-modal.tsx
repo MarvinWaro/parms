@@ -1,26 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Pencil } from "lucide-react";
-import { FormEvent, useEffect, useMemo } from "react";
-import { toast } from "sonner";
-import { useForm } from "@inertiajs/react";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { useForm } from '@inertiajs/react';
+import { Pencil } from 'lucide-react';
+import { FormEvent, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 
 type PropertyData = {
     id: string;
@@ -91,20 +78,12 @@ export default function EditPropertyModal({
     conditions,
     funds,
     onSuccess,
-    source = 'show' // Default to 'show' if not provided
+    source = 'show', // Default to 'show' if not provided
 }: EditPropertyModalProps) {
     // Create a memoized form data that updates when property or source changes
     const formData = useMemo(() => getInitialFormData(property, source), [property.id, source]);
 
-    const {
-        data,
-        setData,
-        patch,
-        processing,
-        errors,
-        clearErrors,
-        reset,
-    } = useForm(formData);
+    const { data, setData, patch, processing, errors, clearErrors, reset } = useForm(formData);
 
     // Reset form when modal opens
     useEffect(() => {
@@ -148,7 +127,7 @@ export default function EditPropertyModal({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
@@ -162,9 +141,11 @@ export default function EditPropertyModal({
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 py-4">
                         {/* Row 1 */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="edit-modal-item_name">Item Name <span className="text-red-500">*</span></Label>
+                                <Label htmlFor="edit-modal-item_name">
+                                    Item Name <span className="text-red-500">*</span>
+                                </Label>
                                 <Input
                                     id="edit-modal-item_name"
                                     placeholder="e.g., Dell Latitude 5440"
@@ -190,7 +171,7 @@ export default function EditPropertyModal({
                         </div>
 
                         {/* Row 2 */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="edit-modal-serial_no">Serial No</Label>
                                 <Input
@@ -218,7 +199,7 @@ export default function EditPropertyModal({
                         </div>
 
                         {/* Row 3 */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="edit-modal-acquisition_date">Acquisition Date</Label>
                                 <Input
@@ -248,7 +229,7 @@ export default function EditPropertyModal({
                         </div>
 
                         {/* Row 4 */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="edit-modal-unit_of_measure">Unit of Measure</Label>
                                 <Input
@@ -272,23 +253,21 @@ export default function EditPropertyModal({
                                     className={errors.quantity_per_physical_count ? 'border-red-500' : ''}
                                     disabled={processing}
                                 />
-                                {errors.quantity_per_physical_count && (
-                                    <p className="text-sm text-red-500">{errors.quantity_per_physical_count}</p>
-                                )}
+                                {errors.quantity_per_physical_count && <p className="text-sm text-red-500">{errors.quantity_per_physical_count}</p>}
                             </div>
                         </div>
 
                         {/* Row 5: Fund + User */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label>Fund</Label>
                                 <Select value={data.fund} onValueChange={(v) => setData('fund', v)} disabled={processing}>
                                     <SelectTrigger className={`w-full ${errors.fund ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Select fund" />
                                     </SelectTrigger>
-                                    <SelectContent position="popper" className="w-[--radix-select-trigger-width] max-h-60">
+                                    <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
                                         {funds.map((f) => (
-                                            <SelectItem key={f.value} value={f.value} className="whitespace-normal leading-5">
+                                            <SelectItem key={f.value} value={f.value} className="leading-5 whitespace-normal">
                                                 {f.label}
                                             </SelectItem>
                                         ))}
@@ -298,18 +277,16 @@ export default function EditPropertyModal({
                             </div>
 
                             <div className="space-y-2">
-                                <Label>User <span className="text-red-500">*</span></Label>
-                                <Select
-                                    value={data.user_id || ''}
-                                    onValueChange={(v) => setData('user_id', v)}
-                                    disabled={processing}
-                                >
+                                <Label>
+                                    User <span className="text-red-500">*</span>
+                                </Label>
+                                <Select value={data.user_id || ''} onValueChange={(v) => setData('user_id', v)} disabled={processing}>
                                     <SelectTrigger className={`w-full ${errors.user_id ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Select user" />
                                     </SelectTrigger>
-                                    <SelectContent position="popper" className="w-[--radix-select-trigger-width] max-h-60">
+                                    <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
                                         {users.map((u) => (
-                                            <SelectItem key={u.id} value={String(u.id)} className="whitespace-normal leading-5">
+                                            <SelectItem key={u.id} value={String(u.id)} className="leading-5 whitespace-normal">
                                                 {u.name}
                                             </SelectItem>
                                         ))}
@@ -321,18 +298,16 @@ export default function EditPropertyModal({
 
                         {/* Row 6: Location */}
                         <div className="space-y-2">
-                            <Label>Location / Whereabouts <span className="text-red-500">*</span></Label>
-                            <Select
-                                value={data.location_id || ''}
-                                onValueChange={(v) => setData('location_id', v)}
-                                disabled={processing}
-                            >
+                            <Label>
+                                Location / Whereabouts <span className="text-red-500">*</span>
+                            </Label>
+                            <Select value={data.location_id || ''} onValueChange={(v) => setData('location_id', v)} disabled={processing}>
                                 <SelectTrigger className={`w-full ${errors.location_id ? 'border-red-500' : ''}`}>
                                     <SelectValue placeholder="Select location" />
                                 </SelectTrigger>
-                                <SelectContent position="popper" className="w-[--radix-select-trigger-width] max-h-60">
+                                <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
                                     {locations.map((loc) => (
-                                        <SelectItem key={loc.id} value={String(loc.id)} className="whitespace-normal leading-5">
+                                        <SelectItem key={loc.id} value={String(loc.id)} className="leading-5 whitespace-normal">
                                             {loc.name}
                                         </SelectItem>
                                     ))}
@@ -343,18 +318,16 @@ export default function EditPropertyModal({
 
                         {/* Row 7: Condition */}
                         <div className="space-y-2">
-                            <Label>Condition <span className="text-red-500">*</span></Label>
-                            <Select
-                                value={data.condition_id || ''}
-                                onValueChange={(v) => setData('condition_id', v)}
-                                disabled={processing}
-                            >
+                            <Label>
+                                Condition <span className="text-red-500">*</span>
+                            </Label>
+                            <Select value={data.condition_id || ''} onValueChange={(v) => setData('condition_id', v)} disabled={processing}>
                                 <SelectTrigger className={`w-full ${errors.condition_id ? 'border-red-500' : ''}`}>
                                     <SelectValue placeholder="Select condition" />
                                 </SelectTrigger>
-                                <SelectContent position="popper" className="w-[--radix-select-trigger-width] max-h-60">
+                                <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
                                     {conditions.map((c) => (
-                                        <SelectItem key={c.id} value={String(c.id)} className="whitespace-normal leading-5">
+                                        <SelectItem key={c.id} value={String(c.id)} className="leading-5 whitespace-normal">
                                             {c.name}
                                         </SelectItem>
                                     ))}
@@ -379,7 +352,7 @@ export default function EditPropertyModal({
                         </div>
 
                         {/* Remarks + Color */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="edit-modal-remarks">Remarks</Label>
                                 <Textarea
@@ -401,7 +374,7 @@ export default function EditPropertyModal({
                                         type="color"
                                         value={data.color}
                                         onChange={(e) => setData('color', e.target.value)}
-                                        className={`w-16 h-10 p-1 ${errors.color ? 'border-red-500' : ''}`}
+                                        className={`h-10 w-16 p-1 ${errors.color ? 'border-red-500' : ''}`}
                                         disabled={processing}
                                     />
                                     <Input
@@ -434,4 +407,3 @@ export default function EditPropertyModal({
         </Dialog>
     );
 }
-

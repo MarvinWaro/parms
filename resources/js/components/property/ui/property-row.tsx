@@ -1,16 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
-import { AlertTriangle, Package, Pencil, Trash2, Eye } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { useForm } from "@inertiajs/react";
 import EditPropertyModal from '@/components/property/ui/edit-property-modal';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { useForm } from '@inertiajs/react';
+import { AlertTriangle, Eye, Package, Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 type PropertyRow = {
     id: string;
@@ -55,14 +51,7 @@ interface PropertyRowTemplateProps {
 
 const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 2 });
 
-export default function PropertyRowTemplate({
-    row,
-    index,
-    locations,
-    users,
-    conditions,
-    funds
-}: PropertyRowTemplateProps) {
+export default function PropertyRowTemplate({ row, index, locations, users, conditions, funds }: PropertyRowTemplateProps) {
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
 
@@ -116,18 +105,12 @@ export default function PropertyRowTemplate({
                             <Package className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-medium text-foreground leading-none">
-                                {row.item_name}
-                            </span>
-                            <span className="text-xs text-muted-foreground mt-1">
-                                {row.property_number}
-                            </span>
+                            <span className="leading-none font-medium text-foreground">{row.item_name}</span>
+                            <span className="mt-1 text-xs text-muted-foreground">{row.property_number}</span>
                         </div>
                     </div>
                 </TableCell>
-                <TableCell className="px-6 py-4 align-middle">
-                    {row.location}
-                </TableCell>
+                <TableCell className="px-6 py-4 align-middle">{row.location}</TableCell>
                 <TableCell className="px-6 py-4 align-middle">
                     <Badge variant="outline">{row.condition}</Badge>
                 </TableCell>
@@ -140,8 +123,8 @@ export default function PropertyRowTemplate({
                             variant="ghost"
                             size="sm"
                             title="View property"
-                            onClick={() => window.location.href = route('properties.show', row.id)}
-                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-muted/60 hover:scale-105"
+                            onClick={() => (window.location.href = route('properties.show', row.id))}
+                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-muted/60 hover:text-foreground"
                         >
                             <Eye className="h-4 w-4" />
                         </Button>
@@ -150,7 +133,7 @@ export default function PropertyRowTemplate({
                             size="sm"
                             title="Edit property"
                             onClick={() => setOpenEdit(true)}
-                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-muted/60 hover:scale-105"
+                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-muted/60 hover:text-foreground"
                         >
                             <Pencil className="h-4 w-4" />
                         </Button>
@@ -162,20 +145,20 @@ export default function PropertyRowTemplate({
                                     variant="ghost"
                                     size="sm"
                                     title="Delete property"
-                                    className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-destructive hover:bg-destructive/10 hover:scale-105"
+                                    className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-destructive/10 hover:text-destructive"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-80 p-0" align="end" side="bottom">
-                                <div className="p-4 space-y-3">
+                                <div className="space-y-3 p-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 flex-shrink-0 mt-0.5">
+                                        <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
                                             <AlertTriangle className="h-4 w-4 text-destructive" />
                                         </div>
-                                        <div className="space-y-1 flex-1">
+                                        <div className="flex-1 space-y-1">
                                             <h4 className="text-sm font-medium text-foreground">Delete property</h4>
-                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                            <p className="text-xs leading-relaxed text-muted-foreground">
                                                 Delete "{row.item_name}"? This action cannot be undone.
                                             </p>
                                         </div>
@@ -187,7 +170,7 @@ export default function PropertyRowTemplate({
                                             size="sm"
                                             onClick={() => setOpenDelete(false)}
                                             disabled={processing}
-                                            className="flex-1 h-8 text-xs"
+                                            className="h-8 flex-1 text-xs"
                                         >
                                             Cancel
                                         </Button>
@@ -196,7 +179,7 @@ export default function PropertyRowTemplate({
                                             size="sm"
                                             onClick={handleDeleteConfirm}
                                             disabled={processing}
-                                            className="flex-1 h-8 text-xs"
+                                            className="h-8 flex-1 text-xs"
                                         >
                                             {processing ? 'Deleting…' : 'Delete'}
                                         </Button>
@@ -223,5 +206,5 @@ export default function PropertyRowTemplate({
                 }}
             />
         </>
-    )
+    );
 }
