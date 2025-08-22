@@ -3,13 +3,14 @@
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ConditionController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', fn () => Inertia::render('welcome'))->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', fn () => Inertia::render('dashboard'))->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Controller-driven page
     Route::get('/location', [LocationController::class, 'index'])->name('location.index');

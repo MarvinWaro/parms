@@ -1,26 +1,14 @@
-import { Button } from "@/components/ui/button";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { Row } from "@/pages/condition";
-import { AlertTriangle, Stethoscope, Pencil, Trash2 } from "lucide-react";
-import { FormEvent, useState } from "react";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
-import { toast } from "sonner";
-import { useForm } from "@inertiajs/react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { Row } from '@/pages/condition';
+import { useForm } from '@inertiajs/react';
+import { AlertTriangle, Pencil, Stethoscope, Trash2 } from 'lucide-react';
+import { FormEvent, useState } from 'react';
+import { toast } from 'sonner';
 
 interface ConditionRowTemplateProps {
     index: number;
@@ -31,16 +19,7 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
 
-    const {
-        data,
-        setData,
-        patch,
-        delete: deleteRequest,
-        processing,
-        errors,
-        reset,
-        clearErrors,
-    } = useForm({ condition: row.condition });
+    const { data, setData, patch, delete: deleteRequest, processing, errors } = useForm({ condition: row.condition });
 
     function openEditFor(row: Row) {
         setOpenEdit(true);
@@ -95,21 +74,15 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
 
     return (
         <>
-            <TableRow
-                className="group border-b border-border/30 transition-all duration-150 hover:bg-muted/20 hover:shadow-sm"
-            >
+            <TableRow className="group border-b border-border/30 transition-all duration-150 hover:bg-muted/20 hover:shadow-sm">
                 <TableCell className="px-6 py-5">
                     <div className="flex items-center gap-4">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20 transition-all duration-200 group-hover:bg-primary/15 group-hover:ring-primary/30">
                             <Stethoscope className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-medium text-foreground leading-none">
-                                {row.condition}
-                            </span>
-                            <span className="text-xs text-muted-foreground mt-1">
-                                Condition #{index + 1}
-                            </span>
+                            <span className="leading-none font-medium text-foreground">{row.condition}</span>
+                            <span className="mt-1 text-xs text-muted-foreground">Condition #{index + 1}</span>
                         </div>
                     </div>
                 </TableCell>
@@ -120,7 +93,7 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
                             size="sm"
                             title="Edit condition"
                             onClick={() => openEditFor(row)}
-                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-muted/60 hover:scale-105"
+                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-muted/60 hover:text-foreground"
                         >
                             <Pencil className="h-4 w-4" />
                         </Button>
@@ -132,20 +105,20 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
                                     variant="ghost"
                                     size="sm"
                                     title="Delete condition"
-                                    className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-destructive hover:bg-destructive/10 hover:scale-105"
+                                    className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-destructive/10 hover:text-destructive"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-80 p-0" align="end" side="bottom">
-                                <div className="p-4 space-y-3">
+                                <div className="space-y-3 p-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 flex-shrink-0 mt-0.5">
+                                        <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
                                             <AlertTriangle className="h-4 w-4 text-destructive" />
                                         </div>
-                                        <div className="space-y-1 flex-1">
+                                        <div className="flex-1 space-y-1">
                                             <h4 className="text-sm font-medium text-foreground">Delete condition</h4>
-                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                            <p className="text-xs leading-relaxed text-muted-foreground">
                                                 Delete "{row.condition}"? This action cannot be undone.
                                             </p>
                                         </div>
@@ -157,7 +130,7 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
                                             size="sm"
                                             onClick={() => setOpenDelete(false)}
                                             disabled={processing}
-                                            className="flex-1 h-8 text-xs"
+                                            className="h-8 flex-1 text-xs"
                                         >
                                             Cancel
                                         </Button>
@@ -166,7 +139,7 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
                                             size="sm"
                                             onClick={handleDeleteConfirm}
                                             disabled={processing}
-                                            className="flex-1 h-8 text-xs"
+                                            className="h-8 flex-1 text-xs"
                                         >
                                             {processing ? 'Deleting…' : 'Delete'}
                                         </Button>
@@ -179,7 +152,12 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
             </TableRow>
 
             {/* Edit Dialog */}
-            <Dialog open={openEdit} onOpenChange={(v) => { setOpenEdit(v) }}>
+            <Dialog
+                open={openEdit}
+                onOpenChange={(v) => {
+                    setOpenEdit(v);
+                }}
+            >
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
@@ -193,7 +171,9 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
 
                     <form onSubmit={handleEditSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit-condition" className="text-sm font-medium">Condition Name</Label>
+                            <Label htmlFor="edit-condition" className="text-sm font-medium">
+                                Condition Name
+                            </Label>
                             <Input
                                 id="edit-condition"
                                 value={data.condition}
@@ -223,5 +203,5 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
                 </DialogContent>
             </Dialog>
         </>
-    )
+    );
 }

@@ -1,33 +1,17 @@
-import AppLayout from '@/layouts/app-layout';
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { type BreadcrumbItem } from '@/types';
-import { toast } from 'sonner';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import ConditionRowTemplate from '@/components/condition/ui/condition-row';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { Plus, Search, Stethoscope } from 'lucide-react';
 import { FormEvent, useState } from 'react';
-import ConditionRowTemplate from '@/components/condition/ui/condition-row';
-
+import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Condition', href: '/condition' }];
 
@@ -39,22 +23,13 @@ export default function ConditionIndex() {
     const rows = props.conditions ?? [];
 
     const [searchQuery, setSearchQuery] = useState('');
-    const filteredRows = rows.filter((row) =>
-        row.condition.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredRows = rows.filter((row) => row.condition.toLowerCase().includes(searchQuery.toLowerCase()));
 
     // -------------------------
     // Create modal + form
     // -------------------------
     const [openCreate, setOpenCreate] = useState(false);
-    const {
-        data,
-        setData,
-        post,
-        processing,
-        errors,
-        reset,
-    } = useForm({ condition: '' });
+    const { data, setData, post, processing, errors, reset } = useForm({ condition: '' });
 
     function handleCreateSubmit(e: FormEvent) {
         e.preventDefault();
@@ -96,7 +71,12 @@ export default function ConditionIndex() {
                             </div>
 
                             {/* Create modal trigger */}
-                            <Dialog open={openCreate} onOpenChange={(v) => { setOpenCreate(v); }}>
+                            <Dialog
+                                open={openCreate}
+                                onOpenChange={(v) => {
+                                    setOpenCreate(v);
+                                }}
+                            >
                                 <DialogTrigger asChild>
                                     <Button size="default" className="shadow-sm">
                                         <Plus className="mr-2 h-4 w-4" />
@@ -111,9 +91,7 @@ export default function ConditionIndex() {
                                             </div>
                                             Add New Condition
                                         </DialogTitle>
-                                        <DialogDescription>
-                                            Add a new condition status to help categorize asset conditions.
-                                        </DialogDescription>
+                                        <DialogDescription>Add a new condition status to help categorize asset conditions.</DialogDescription>
                                     </DialogHeader>
 
                                     <form onSubmit={handleCreateSubmit} className="space-y-4">
@@ -123,7 +101,7 @@ export default function ConditionIndex() {
                                             </Label>
                                             <Input
                                                 id="condition"
-                                                name="condition"  // Add this name attribute
+                                                name="condition" // Add this name attribute
                                                 value={data.condition}
                                                 onChange={(e) => setData('condition', e.target.value)}
                                                 placeholder="e.g., Excellent, Good, Fair, Poor"
@@ -131,10 +109,10 @@ export default function ConditionIndex() {
                                                 aria-invalid={!!errors.condition}
                                                 aria-describedby={errors.condition ? 'condition-error' : undefined}
                                                 disabled={processing}
-                                                required  // Add this for extra validation
+                                                required // Add this for extra validation
                                             />
                                             {errors.condition && (
-                                                <p id="condition-error" className="text-xs text-destructive flex items-center gap-1">
+                                                <p id="condition-error" className="flex items-center gap-1 text-xs text-destructive">
                                                     {errors.condition}
                                                 </p>
                                             )}
@@ -152,11 +130,7 @@ export default function ConditionIndex() {
                                             >
                                                 Cancel
                                             </Button>
-                                            <Button
-                                                type="submit"
-                                                disabled={processing || !data.condition}
-                                                className="min-w-[80px]"
-                                            >
+                                            <Button type="submit" disabled={processing || !data.condition} className="min-w-[80px]">
                                                 {processing ? 'Saving…' : 'Save'}
                                             </Button>
                                         </DialogFooter>
@@ -167,7 +141,7 @@ export default function ConditionIndex() {
                     </div>
 
                     {/* Stats and Search Section */}
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-6">
+                    <div className="flex flex-col gap-4 px-6 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                             <Badge variant="secondary" className="px-3 py-1.5 text-sm font-medium">
                                 {rows.length} {rows.length === 1 ? 'Condition' : 'Conditions'}
@@ -181,7 +155,7 @@ export default function ConditionIndex() {
 
                         {/* Search */}
                         <div className="relative w-full max-w-sm">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 placeholder="Search conditions..."
                                 value={searchQuery}
@@ -192,16 +166,14 @@ export default function ConditionIndex() {
                     </div>
 
                     {/* Enhanced Table Card */}
-                    <Card className="border-0 shadow-none bg-card rounded-none">
+                    <Card className="rounded-none border-0 bg-card shadow-none">
                         <CardContent className="p-0">
                             <div className="overflow-hidden">
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="border-b border-border/50 bg-muted/30 hover:bg-muted/30">
-                                            <TableHead className="h-14 px-6 text-sm font-semibold text-foreground/90">
-                                                Condition
-                                            </TableHead>
-                                            <TableHead className="h-14 px-6 text-right text-sm font-semibold text-foreground/90 w-32">
+                                            <TableHead className="h-14 px-6 text-sm font-semibold text-foreground/90">Condition</TableHead>
+                                            <TableHead className="h-14 w-32 px-6 text-right text-sm font-semibold text-foreground/90">
                                                 Actions
                                             </TableHead>
                                         </TableRow>
@@ -216,15 +188,16 @@ export default function ConditionIndex() {
 
                                 {/* Enhanced Empty states */}
                                 {filteredRows.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center py-20 px-6">
+                                    <div className="flex flex-col items-center justify-center px-6 py-20">
                                         {searchQuery ? (
                                             <>
-                                                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-muted/50 mb-6">
+                                                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-muted/50">
                                                     <Search className="h-8 w-8 text-muted-foreground" />
                                                 </div>
-                                                <h3 className="text-xl font-semibold text-foreground mb-2">No conditions found</h3>
-                                                <p className="text-sm text-muted-foreground text-center max-w-md mb-6 leading-relaxed">
-                                                    No conditions match your search for "{searchQuery}". Try adjusting your search terms or check the spelling.
+                                                <h3 className="mb-2 text-xl font-semibold text-foreground">No conditions found</h3>
+                                                <p className="mb-6 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
+                                                    No conditions match your search for "{searchQuery}". Try adjusting your search terms or check the
+                                                    spelling.
                                                 </p>
                                                 <Button
                                                     variant="outline"
@@ -237,12 +210,13 @@ export default function ConditionIndex() {
                                             </>
                                         ) : (
                                             <>
-                                                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 mb-6">
+                                                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
                                                     <Stethoscope className="h-8 w-8 text-primary" />
                                                 </div>
-                                                <h3 className="text-xl font-semibold text-foreground mb-2">No conditions yet</h3>
-                                                <p className="text-sm text-muted-foreground text-center max-w-md mb-8 leading-relaxed">
-                                                    Get started by adding your first condition status to help categorize your assets by their current state.
+                                                <h3 className="mb-2 text-xl font-semibold text-foreground">No conditions yet</h3>
+                                                <p className="mb-8 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
+                                                    Get started by adding your first condition status to help categorize your assets by their current
+                                                    state.
                                                 </p>
                                                 <Button onClick={() => setOpenCreate(true)} size="default" className="transition-all duration-200">
                                                     <Plus className="mr-2 h-4 w-4" />

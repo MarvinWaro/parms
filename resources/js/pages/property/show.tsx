@@ -1,19 +1,15 @@
-import AppLayout from '@/layouts/app-layout';
-import { Head, usePage, Link, useForm } from '@inertiajs/react';
-import { type BreadcrumbItem } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import EditPropertyModal from '@/components/property/ui/edit-property-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
-import { ArrowLeft, Package, Calendar, DollarSign, MapPin, User, Wrench, Palette, Pencil, Trash2, Printer, AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { AlertTriangle, ArrowLeft, Calendar, DollarSign, MapPin, Package, Palette, Pencil, Printer, Trash2, User, Wrench } from 'lucide-react';
 import { useState } from 'react';
-import EditPropertyModal from '@/components/property/ui/edit-property-modal';
+import { toast } from 'sonner';
 
 type PropertyData = {
     id: string;
@@ -69,7 +65,7 @@ export default function PropertyShow() {
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Property', href: '/property' },
-        { title: property.item_name, href: `/property/${property.id}` }
+        { title: property.item_name, href: `/property/${property.id}` },
     ];
 
     function handleDeleteConfirm() {
@@ -109,7 +105,7 @@ export default function PropertyShow() {
                                 <div className="flex items-center gap-3">
                                     <Link href="/property">
                                         <Button variant="ghost" size="sm" className="pl-0">
-                                            <ArrowLeft className="h-4 w-4 mr-2" />
+                                            <ArrowLeft className="mr-2 h-4 w-4" />
                                             Back to Properties
                                         </Button>
                                     </Link>
@@ -127,7 +123,7 @@ export default function PropertyShow() {
                             <div className="flex items-center gap-2">
                                 <Link href={route('properties.index')}>
                                     <Button variant="outline">
-                                        <ArrowLeft className="h-4 w-4 mr-2" />
+                                        <ArrowLeft className="mr-2 h-4 w-4" />
                                         Back to List
                                     </Button>
                                 </Link>
@@ -137,9 +133,9 @@ export default function PropertyShow() {
 
                     {/* Content Grid */}
                     <div className="px-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                             {/* Main Content - 2/3 width */}
-                            <div className="lg:col-span-2 space-y-6">
+                            <div className="space-y-6 lg:col-span-2">
                                 {/* Basic Information */}
                                 <Card>
                                     <CardHeader>
@@ -149,7 +145,7 @@ export default function PropertyShow() {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <div>
                                                 <label className="text-sm font-medium text-muted-foreground">Item Name</label>
                                                 <p className="text-sm font-medium">{property.item_name}</p>
@@ -181,7 +177,7 @@ export default function PropertyShow() {
                                                 <Separator />
                                                 <div>
                                                     <label className="text-sm font-medium text-muted-foreground">Description</label>
-                                                    <p className="text-sm mt-1 leading-relaxed">{property.item_description}</p>
+                                                    <p className="mt-1 text-sm leading-relaxed">{property.item_description}</p>
                                                 </div>
                                             </>
                                         )}
@@ -191,7 +187,7 @@ export default function PropertyShow() {
                                                 <Separator />
                                                 <div>
                                                     <label className="text-sm font-medium text-muted-foreground">Remarks</label>
-                                                    <p className="text-sm mt-1 leading-relaxed">{property.remarks}</p>
+                                                    <p className="mt-1 text-sm leading-relaxed">{property.remarks}</p>
                                                 </div>
                                             </>
                                         )}
@@ -207,7 +203,7 @@ export default function PropertyShow() {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <div>
                                                 <label className="text-sm font-medium text-muted-foreground">Acquisition Date</label>
                                                 <p className="text-sm">{property.acquisition_date || 'N/A'}</p>
@@ -235,7 +231,7 @@ export default function PropertyShow() {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <div>
                                                 <label className="text-sm font-medium text-muted-foreground">Created</label>
                                                 <p className="text-sm">{property.created_at}</p>
@@ -261,19 +257,19 @@ export default function PropertyShow() {
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div>
-                                            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                            <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                                 <User className="h-4 w-4" />
                                                 Assigned User
                                             </label>
-                                            <p className="text-sm font-medium mt-1">{property.user}</p>
+                                            <p className="mt-1 text-sm font-medium">{property.user}</p>
                                         </div>
                                         <Separator />
                                         <div>
-                                            <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                            <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                                 <MapPin className="h-4 w-4" />
                                                 Location
                                             </label>
-                                            <p className="text-sm font-medium mt-1">{property.location}</p>
+                                            <p className="mt-1 text-sm font-medium">{property.location}</p>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -298,13 +294,13 @@ export default function PropertyShow() {
                                             <>
                                                 <Separator />
                                                 <div>
-                                                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                                    <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                                         <Palette className="h-4 w-4" />
                                                         Color
                                                     </label>
-                                                    <div className="flex items-center gap-2 mt-1">
+                                                    <div className="mt-1 flex items-center gap-2">
                                                         <div
-                                                            className="w-4 h-4 rounded-full border border-border"
+                                                            className="h-4 w-4 rounded-full border border-border"
                                                             style={{ backgroundColor: property.color }}
                                                         ></div>
                                                         <span className="text-sm">{property.color}</span>
@@ -321,21 +317,13 @@ export default function PropertyShow() {
                                         <CardTitle>Quick Actions</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-2">
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start"
-                                            onClick={() => setOpenEdit(true)}
-                                        >
-                                            <Pencil className="h-4 w-4 mr-2" />
+                                        <Button variant="outline" className="w-full justify-start" onClick={() => setOpenEdit(true)}>
+                                            <Pencil className="mr-2 h-4 w-4" />
                                             Edit Property
                                         </Button>
 
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start"
-                                            onClick={handlePrintSticker}
-                                        >
-                                            <Printer className="h-4 w-4 mr-2" />
+                                        <Button variant="outline" className="w-full justify-start" onClick={handlePrintSticker}>
+                                            <Printer className="mr-2 h-4 w-4" />
                                             Print Sticker
                                         </Button>
 
@@ -344,22 +332,23 @@ export default function PropertyShow() {
                                             <PopoverTrigger asChild>
                                                 <Button
                                                     variant="outline"
-                                                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                 >
-                                                    <Trash2 className="h-4 w-4 mr-2" />
+                                                    <Trash2 className="mr-2 h-4 w-4" />
                                                     Delete Property
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-80 p-0" align="center" side="bottom">
-                                                <div className="p-4 space-y-3">
+                                                <div className="space-y-3 p-4">
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 flex-shrink-0 mt-0.5">
+                                                        <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
                                                             <AlertTriangle className="h-4 w-4 text-destructive" />
                                                         </div>
-                                                        <div className="space-y-1 flex-1">
+                                                        <div className="flex-1 space-y-1">
                                                             <h4 className="text-sm font-medium text-foreground">Delete property</h4>
-                                                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                                                Delete "{property.item_name}"? This action cannot be undone and you will be redirected to the properties list.
+                                                            <p className="text-xs leading-relaxed text-muted-foreground">
+                                                                Delete "{property.item_name}"? This action cannot be undone and you will be redirected
+                                                                to the properties list.
                                                             </p>
                                                         </div>
                                                     </div>
@@ -370,7 +359,7 @@ export default function PropertyShow() {
                                                             size="sm"
                                                             onClick={() => setOpenDelete(false)}
                                                             disabled={deleteProcessing}
-                                                            className="flex-1 h-8 text-xs"
+                                                            className="h-8 flex-1 text-xs"
                                                         >
                                                             Cancel
                                                         </Button>
@@ -379,7 +368,7 @@ export default function PropertyShow() {
                                                             size="sm"
                                                             onClick={handleDeleteConfirm}
                                                             disabled={deleteProcessing}
-                                                            className="flex-1 h-8 text-xs"
+                                                            className="h-8 flex-1 text-xs"
                                                         >
                                                             {deleteProcessing ? 'Deleting…' : 'Delete'}
                                                         </Button>

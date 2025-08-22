@@ -1,26 +1,14 @@
-import { Button } from "@/components/ui/button";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { Row } from "@/pages/location";
-import { AlertTriangle, MapPin, Pencil, Trash2 } from "lucide-react";
-import { FormEvent, useState } from "react";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
-import { toast } from "sonner";
-import { useForm } from "@inertiajs/react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { Row } from '@/pages/location';
+import { useForm } from '@inertiajs/react';
+import { AlertTriangle, MapPin, Pencil, Trash2 } from 'lucide-react';
+import { FormEvent, useState } from 'react';
+import { toast } from 'sonner';
 
 interface LocationRowTemplateProps {
     index: number;
@@ -31,16 +19,7 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
 
-    const {
-        data,
-        setData,
-        patch,
-        delete: deleteRequest,
-        processing,
-        errors,
-        reset,
-        clearErrors,
-    } = useForm({ location: row.location });
+    const { data, setData, patch, delete: deleteRequest, processing, errors } = useForm({ location: row.location });
 
     function openEditFor(row: Row) {
         setOpenEdit(true);
@@ -87,21 +66,15 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
 
     return (
         <>
-            <TableRow
-                className="group border-b border-border/30 transition-all duration-150 hover:bg-muted/20 hover:shadow-sm"
-            >
+            <TableRow className="group border-b border-border/30 transition-all duration-150 hover:bg-muted/20 hover:shadow-sm">
                 <TableCell className="px-6 py-5">
                     <div className="flex items-center gap-4">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20 transition-all duration-200 group-hover:bg-primary/15 group-hover:ring-primary/30">
                             <MapPin className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-medium text-foreground leading-none">
-                                {row.location}
-                            </span>
-                            <span className="text-xs text-muted-foreground mt-1">
-                                Location #{index + 1}
-                            </span>
+                            <span className="leading-none font-medium text-foreground">{row.location}</span>
+                            <span className="mt-1 text-xs text-muted-foreground">Location #{index + 1}</span>
                         </div>
                     </div>
                 </TableCell>
@@ -112,7 +85,7 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
                             size="sm"
                             title="Edit location"
                             onClick={() => openEditFor(row)}
-                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-muted/60 hover:scale-105"
+                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-muted/60 hover:text-foreground"
                         >
                             <Pencil className="h-4 w-4" />
                         </Button>
@@ -124,20 +97,20 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
                                     variant="ghost"
                                     size="sm"
                                     title="Delete location"
-                                    className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:text-destructive hover:bg-destructive/10 hover:scale-105"
+                                    className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-destructive/10 hover:text-destructive"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-80 p-0" align="end" side="bottom">
-                                <div className="p-4 space-y-3">
+                                <div className="space-y-3 p-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 flex-shrink-0 mt-0.5">
+                                        <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
                                             <AlertTriangle className="h-4 w-4 text-destructive" />
                                         </div>
-                                        <div className="space-y-1 flex-1">
+                                        <div className="flex-1 space-y-1">
                                             <h4 className="text-sm font-medium text-foreground">Delete location</h4>
-                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                            <p className="text-xs leading-relaxed text-muted-foreground">
                                                 Delete "{row.location}"? This action cannot be undone.
                                             </p>
                                         </div>
@@ -149,7 +122,7 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
                                             size="sm"
                                             onClick={() => setOpenDelete(false)}
                                             disabled={processing}
-                                            className="flex-1 h-8 text-xs"
+                                            className="h-8 flex-1 text-xs"
                                         >
                                             Cancel
                                         </Button>
@@ -158,7 +131,7 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
                                             size="sm"
                                             onClick={handleDeleteConfirm}
                                             disabled={processing}
-                                            className="flex-1 h-8 text-xs"
+                                            className="h-8 flex-1 text-xs"
                                         >
                                             {processing ? 'Deleting…' : 'Delete'}
                                         </Button>
@@ -171,7 +144,12 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
             </TableRow>
 
             {/* Edit Dialog */}
-            <Dialog open={openEdit} onOpenChange={(v) => { setOpenEdit(v) }}>
+            <Dialog
+                open={openEdit}
+                onOpenChange={(v) => {
+                    setOpenEdit(v);
+                }}
+            >
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
@@ -185,7 +163,9 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
 
                     <form onSubmit={handleEditSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="edit-location" className="text-sm font-medium">Location Name</Label>
+                            <Label htmlFor="edit-location" className="text-sm font-medium">
+                                Location Name
+                            </Label>
                             <Input
                                 id="edit-location"
                                 value={data.location}
@@ -215,5 +195,5 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
                 </DialogContent>
             </Dialog>
         </>
-    )
+    );
 }
