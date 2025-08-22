@@ -8,10 +8,11 @@ import {
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import { TrendingUp, Users, DollarSign, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
+import UsersTable from '@/components/dashboard/users-table';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -19,6 +20,18 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/dashboard',
     },
 ];
+
+type User = {
+    id: number;
+    name: string;
+    email: string;
+    created_at: string;
+    avatar: string;
+};
+
+type PageProps = {
+    users?: User[]; // Make users optional
+};
 
 // Pie chart data
 const pieChartData = [
@@ -135,6 +148,8 @@ const chartData = [
 ];
 
 export default function Dashboard() {
+    const { props } = usePage<PageProps>();
+    const { users = [] } = props; // Provide default empty array
     const [timeRange, setTimeRange] = useState("90d");
 
     const filteredData = chartData.filter((item) => {
@@ -386,6 +401,9 @@ export default function Dashboard() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Users Table Component - Full Width */}
+                <UsersTable users={users} />
             </div>
         </AppLayout>
     );
