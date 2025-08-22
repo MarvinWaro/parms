@@ -32,14 +32,7 @@ export default function ConditionRowTemplate({ row, index }: ConditionRowTemplat
     const [openDelete, setOpenDelete] = useState(false);
 
     const {
-        data,
-        setData,
-        patch,
-        delete: deleteRequest,
-        processing,
-        errors,
-        reset,
-        clearErrors,
+        data, setData, patch, delete: deleteRequest, processing, errors
     } = useForm({ condition: row.condition });
 
     function openEditFor(row: Row) {

@@ -32,14 +32,7 @@ export default function LocationRowTemplate({ row, index }: LocationRowTemplateP
     const [openDelete, setOpenDelete] = useState(false);
 
     const {
-        data,
-        setData,
-        patch,
-        delete: deleteRequest,
-        processing,
-        errors,
-        reset,
-        clearErrors,
+        data, setData, patch, delete: deleteRequest, processing, errors
     } = useForm({ location: row.location });
 
     function openEditFor(row: Row) {
