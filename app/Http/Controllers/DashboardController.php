@@ -10,20 +10,22 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
-        $users = User::select('id', 'name', 'email', 'created_at')
-            ->latest()
+        $users = User::select('id', 'name', 'email', 'role', 'created_at')
+            ->orderByRaw("CASE WHEN role = 'admin' THEN 0 ELSE 1 END")
+            ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($user) {
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'role' => $user->role,
                     'created_at' => $user->created_at->format('M j, Y'),
                     'avatar' => $this->generateAvatar($user->name),
                 ];
             });
 
-        return Inertia::render('dashboard', [ // Change 'Dashboard' to 'dashboard'
+        return Inertia::render('dashboard', [
             'users' => $users,
         ]);
     }

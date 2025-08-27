@@ -47,11 +47,6 @@ const staffNavItems: NavItem[] = [
         href: '/staff-dashboard',
         icon: Home,
     },
-    {
-        title: 'Properties',
-        href: '/property',
-        icon: Laptop,
-    },
 ];
 
 interface AppHeaderProps {
@@ -111,7 +106,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     return (
         <>
             {/* Main Header */}
-            <div className="bg-gradient-to-r from-[#b80600] to-[#b80600] text-white shadow-lg">
+            <div className="bg-gradient-to-r from-[#006241] to-[#006241] text-white shadow-lg">
                 <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-6">
                     {/* Left Section - Logo and Title */}
                     <div className="flex items-center space-x-4">

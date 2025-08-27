@@ -5,6 +5,7 @@ use App\Http\Controllers\ConditionController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StaffDashboardController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -50,6 +51,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     // Property deletion - admin only
     Route::delete('/property/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
+
+
+    // User management - admin only
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
 require __DIR__.'/settings.php';
