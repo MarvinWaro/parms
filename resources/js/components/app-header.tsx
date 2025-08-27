@@ -12,11 +12,12 @@ import { useAppearance } from '@/hooks/use-appearance';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, MapPinCheckInside, Menu, Moon, Sun, ScanHeart, Monitor, Laptop } from 'lucide-react';
+import { LayoutGrid, MapPinCheckInside, Menu, Moon, Sun, ScanHeart, Monitor, Laptop, Home } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
-const mainNavItems: NavItem[] = [
+// Admin navigation items
+const adminNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
@@ -27,7 +28,7 @@ const mainNavItems: NavItem[] = [
         href: '/location',
         icon: MapPinCheckInside,
     },
-        {
+    {
         title: 'Conditions',
         href: '/condition',
         icon: ScanHeart,
@@ -39,7 +40,19 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-// Removed rightNavItems - not needed yet
+// Staff navigation items
+const staffNavItems: NavItem[] = [
+    {
+        title: 'Home',
+        href: '/staff-dashboard',
+        icon: Home,
+    },
+    {
+        title: 'Properties',
+        href: '/property',
+        icon: Laptop,
+    },
+];
 
 interface AppHeaderProps {
     breadcrumbs?: BreadcrumbItem[];
@@ -50,6 +63,17 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const { auth } = page.props;
     const getInitials = useInitials();
     const { appearance, updateAppearance } = useAppearance();
+
+    // Determine user role and get appropriate navigation items
+    const userRole = auth.user.role;
+    const isAdmin = userRole === 'admin';
+    const isStaff = userRole === 'staff';
+
+    // Get navigation items based on role
+    const navigationItems = isAdmin ? adminNavItems : staffNavItems;
+
+    // Get home URL based on role
+    const homeUrl = isAdmin ? '/dashboard' : '/staff-dashboard';
 
     // Function to cycle through themes
     const toggleTheme = () => {
@@ -87,7 +111,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     return (
         <>
             {/* Main Header */}
-            <div className="bg-gradient-to-r from-[#1E3A8A] to-[#1E3A8A] text-white shadow-lg">
+            <div className="bg-gradient-to-r from-[#b80600] to-[#b80600] text-white shadow-lg">
                 <div className="mx-auto max-w-7xl flex h-16 items-center justify-between px-6">
                     {/* Left Section - Logo and Title */}
                     <div className="flex items-center space-x-4">
@@ -106,7 +130,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     </SheetHeader>
                                     <div className="flex h-full flex-1 flex-col space-y-4 p-4">
                                         <div className="flex flex-col space-y-4">
-                                            {mainNavItems.map((item) => (
+                                            {navigationItems.map((item) => (
                                                 <Link key={item.title} href={item.href} className="flex items-center space-x-2 font-medium">
                                                     {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
                                                     <span>{item.title}</span>
@@ -118,9 +142,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                             </Sheet>
                         </div>
 
-                        {/* Logo and System Title */}
-                        <Link href="/dashboard" prefetch className="flex items-center space-x-3">
-                            <div className="flex  items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
+                        {/* Logo and System Title - Role-based redirect */}
+                        <Link href={homeUrl} prefetch className="flex items-center space-x-3">
+                            <div className="flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
                                 <AppLogoIcon className="h-10 w-10 fill-current text-white" />
                             </div>
                             <div className="hidden sm:block">
@@ -179,7 +203,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     <div className="hidden lg:flex h-full items-center">
                         <NavigationMenu className="flex h-full items-stretch">
                             <NavigationMenuList className="flex h-full items-stretch space-x-0">
-                                {mainNavItems.map((item, index) => (
+                                {navigationItems.map((item, index) => (
                                     <NavigationMenuItem key={index} className="relative flex h-full items-center">
                                         <Link
                                             href={item.href}

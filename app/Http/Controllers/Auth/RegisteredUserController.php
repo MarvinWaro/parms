@@ -40,12 +40,27 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => User::ROLE_STAFF, // Explicitly set role as staff
         ]);
 
         event(new Registered($user));
-
         Auth::login($user);
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Redirect based on user role
+        return $this->redirectBasedOnRole($user);
     }
+
+    /**
+     * Redirect user based on their role
+     */
+    private function redirectBasedOnRole(User $user): RedirectResponse
+    {
+        // clear stale intended URL set before registration
+        session()->forget('url.intended');
+
+        return $user->isAdmin()
+            ? redirect()->route('dashboard')
+            : redirect()->route('staff.dashboard');
+    }
+
 }
