@@ -17,37 +17,61 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
-import { Loader2 } from 'lucide-react';
+import { FormEventHandler, useEffect } from 'react';
+import { Loader2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface AddUserDialogProps {
+type User = {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    created_at: string;
+    avatar: string;
+};
+
+interface EditUserDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    user: User | null;
 }
 
-export default function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
+export default function EditUserDialog({ open, onOpenChange, user }: EditUserDialogProps) {
     const form = useForm({
         name: '',
         email: '',
-        password: '12345678',
         role: 'staff',
+        password: '', // Optional field for password updates
     });
+
+    // Populate form when user changes or dialog opens
+    useEffect(() => {
+        if (user && open) {
+            form.setData({
+                name: user.name,
+                email: user.email,
+                role: user.role as 'admin' | 'staff',
+                password: '',
+            });
+        }
+    }, [user, open]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
+        if (!user) return;
+
         const promise = new Promise<void>((resolve, reject) => {
-            form.post(route('users.store'), {
+            form.patch(route('users.update', user.id), {
                 preserveScroll: true,
                 onSuccess: () => resolve(),
-                onError: () => reject('Failed to create user. Please try again.'),
+                onError: () => reject('Failed to update user. Please try again.'),
             });
         });
 
         toast.promise(promise, {
-            loading: 'Creating user...',
-            success: 'User created successfully!',
+            loading: 'Updating user...',
+            success: 'User updated successfully!',
             error: (message) => message,
             duration: 2000,
         });
@@ -56,8 +80,8 @@ export default function AddUserDialog({ open, onOpenChange }: AddUserDialogProps
             form.setData({
                 name: '',
                 email: '',
-                password: '12345678',
                 role: 'staff',
+                password: '',
             });
             onOpenChange(false);
         });
@@ -65,12 +89,12 @@ export default function AddUserDialog({ open, onOpenChange }: AddUserDialogProps
 
     const handleOpenChange = (newOpen: boolean) => {
         if (!newOpen && !form.processing) {
-            // Explicitly reset form data when closing
+            // Reset form when closing
             form.setData({
                 name: '',
                 email: '',
-                password: '12345678',
                 role: 'staff',
+                password: '',
             });
         }
         onOpenChange(newOpen);
@@ -80,9 +104,14 @@ export default function AddUserDialog({ open, onOpenChange }: AddUserDialogProps
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Add New User</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                            <Pencil className="h-4 w-4 text-primary" />
+                        </div>
+                        Edit User
+                    </DialogTitle>
                     <DialogDescription>
-                        Create a new user account. The user will need to change the default password on first login.
+                        Update user information and role. Leave password empty to keep current password.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -90,12 +119,12 @@ export default function AddUserDialog({ open, onOpenChange }: AddUserDialogProps
                     <div className="grid gap-4 py-4">
                         {/* Name Field */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">
+                            <Label htmlFor="edit-name" className="text-right">
                                 Name
                             </Label>
                             <div className="col-span-3">
                                 <Input
-                                    id="name"
+                                    id="edit-name"
                                     type="text"
                                     value={form.data.name}
                                     onChange={(e) => form.setData('name', e.target.value)}
@@ -112,12 +141,12 @@ export default function AddUserDialog({ open, onOpenChange }: AddUserDialogProps
 
                         {/* Email Field */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="email" className="text-right">
+                            <Label htmlFor="edit-email" className="text-right">
                                 Email
                             </Label>
                             <div className="col-span-3">
                                 <Input
-                                    id="email"
+                                    id="edit-email"
                                     type="email"
                                     value={form.data.email}
                                     onChange={(e) => form.setData('email', e.target.value)}
@@ -132,23 +161,23 @@ export default function AddUserDialog({ open, onOpenChange }: AddUserDialogProps
                             </div>
                         </div>
 
-                        {/* Password Field (Read-only, shows default) */}
+                        {/* Password Field (Optional) */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="password" className="text-right">
+                            <Label htmlFor="edit-password" className="text-right">
                                 Password
                             </Label>
                             <div className="col-span-3">
                                 <Input
-                                    id="password"
-                                    type="text"
+                                    id="edit-password"
+                                    type="password"
                                     value={form.data.password}
                                     onChange={(e) => form.setData('password', e.target.value)}
+                                    placeholder="Enter new password (optional)"
                                     className={form.errors.password ? 'border-red-500' : ''}
                                     disabled={form.processing}
-                                    readOnly
                                 />
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    Default password. User must change on first login.
+                                    Leave empty to keep current password
                                 </p>
                                 {form.errors.password && (
                                     <p className="text-sm text-red-500 mt-1">{form.errors.password}</p>
@@ -164,11 +193,11 @@ export default function AddUserDialog({ open, onOpenChange }: AddUserDialogProps
                             <div className="col-span-3">
                                 <Select
                                     value={form.data.role}
-                                    onValueChange={(value) => form.setData('role', value)}
+                                    onValueChange={(value: 'admin' | 'staff') => form.setData('role', value)}
                                     disabled={form.processing}
                                 >
                                     <SelectTrigger
-                                        id="role"
+                                        id="edit-role"
                                         className={form.errors.role ? 'border-red-500' : ''}
                                     >
                                         <SelectValue placeholder="Select role" />
@@ -198,10 +227,10 @@ export default function AddUserDialog({ open, onOpenChange }: AddUserDialogProps
                             {form.processing ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Creating...
+                                    Updating...
                                 </>
                             ) : (
-                                'Create User'
+                                'Save Changes'
                             )}
                         </Button>
                     </DialogFooter>

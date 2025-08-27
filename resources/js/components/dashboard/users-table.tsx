@@ -10,9 +10,10 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UserCheck, UserPlus } from 'lucide-react';
+import { UserCheck, UserPlus, Eye, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import AddUserDialog from './users-add-dialog';
+import EditUserDialog from './users-edit-dialog';
 
 type User = {
     id: number;
@@ -29,6 +30,34 @@ interface UsersTableProps {
 
 export default function UsersTable({ users = [] }: UsersTableProps) { // Provide default empty array
     const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+    const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    const handleViewUser = (user: User) => {
+        // TODO: Implement view user functionality
+        console.log('View user:', user);
+    };
+
+    const handleEditUser = (user: User) => {
+        setSelectedUser(user);
+        setIsEditUserDialogOpen(true);
+    };
+
+    const handleEditDialogClose = () => {
+        setIsEditUserDialogOpen(false);
+        setSelectedUser(null);
+    };
+
+    const getRoleBadgeStyle = (role: string) => {
+        switch (role.toLowerCase()) {
+            case 'admin':
+                return 'bg-blue-50 text-blue-700 border-blue-200';
+            case 'staff':
+                return 'bg-green-50 text-green-700 border-green-200';
+            default:
+                return 'bg-gray-50 text-gray-700 border-gray-200';
+        }
+    };
 
     return (
         <>
@@ -71,10 +100,10 @@ export default function UsersTable({ users = [] }: UsersTableProps) { // Provide
                                         Email
                                     </TableHead>
                                     <TableHead className="h-14 px-6 text-sm font-semibold text-foreground/90">
-                                        Member Since
+                                        Role
                                     </TableHead>
                                     <TableHead className="h-14 px-6 text-right text-sm font-semibold text-foreground/90">
-                                        Status
+                                        Actions
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -102,13 +131,35 @@ export default function UsersTable({ users = [] }: UsersTableProps) { // Provide
                                             <TableCell className="px-6 py-4 text-muted-foreground">
                                                 {user.email}
                                             </TableCell>
-                                            <TableCell className="px-6 py-4 text-muted-foreground">
-                                                {user.created_at}
-                                            </TableCell>
-                                            <TableCell className="px-6 py-4 text-right">
-                                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                                    Active
+                                            <TableCell className="px-6 py-4">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={getRoleBadgeStyle(user.role)}
+                                                >
+                                                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                                                 </Badge>
+                                            </TableCell>
+                                            <TableCell className="px-6 py-4">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        title="View user details"
+                                                        onClick={() => handleViewUser(user)}
+                                                        className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-muted/60 hover:text-foreground"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        title="Edit user"
+                                                        onClick={() => handleEditUser(user)}
+                                                        className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-muted/60 hover:text-foreground"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -129,6 +180,13 @@ export default function UsersTable({ users = [] }: UsersTableProps) { // Provide
             <AddUserDialog
                 open={isAddUserDialogOpen}
                 onOpenChange={setIsAddUserDialogOpen}
+            />
+
+            {/* Edit User Dialog */}
+            <EditUserDialog
+                open={isEditUserDialogOpen}
+                onOpenChange={handleEditDialogClose}
+                user={selectedUser}
             />
         </>
     );
