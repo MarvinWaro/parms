@@ -25,6 +25,7 @@ type User = {
     id: number;
     name: string;
     email: string;
+    role: string; // Added the missing role field
     created_at: string;
     avatar: string;
 };

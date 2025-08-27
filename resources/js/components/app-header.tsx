@@ -47,11 +47,6 @@ const staffNavItems: NavItem[] = [
         href: '/staff-dashboard',
         icon: Home,
     },
-    {
-        title: 'Properties',
-        href: '/property',
-        icon: Laptop,
-    },
 ];
 
 interface AppHeaderProps {

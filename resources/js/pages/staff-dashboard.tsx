@@ -56,7 +56,7 @@ export default function StaffDashboard() {
                 </Card>
 
                 {/* Quick Actions */}
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+                {/* <div className="grid auto-rows-min gap-4 md:grid-cols-3">
                     <Card className="hover:shadow-md transition-shadow cursor-pointer">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Properties</CardTitle>
@@ -95,7 +95,7 @@ export default function StaffDashboard() {
                             </p>
                         </CardContent>
                     </Card>
-                </div>
+                </div> */}
 
                 {/* Recent Activity or Additional Content */}
                 <Card>

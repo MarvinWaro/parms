@@ -10,7 +10,7 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
-        $users = User::select('id', 'name', 'email', 'created_at')
+        $users = User::select('id', 'name', 'email', 'role', 'created_at') // Add 'role' here
             ->latest()
             ->get()
             ->map(function ($user) {
@@ -18,12 +18,13 @@ class DashboardController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'role' => $user->role, // Add this line
                     'created_at' => $user->created_at->format('M j, Y'),
                     'avatar' => $this->generateAvatar($user->name),
                 ];
             });
 
-        return Inertia::render('dashboard', [ // Change 'Dashboard' to 'dashboard'
+        return Inertia::render('dashboard', [
             'users' => $users,
         ]);
     }
