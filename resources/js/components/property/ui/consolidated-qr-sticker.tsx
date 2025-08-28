@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ExternalLink, Printer, QrCode } from 'lucide-react';
 import { useRef } from 'react';
 import QRCode from 'react-qr-code';
@@ -20,15 +20,18 @@ interface ConsolidatedQRStickerProps {
 }
 
 export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRStickerProps) {
+    // Screen preview (scaled)
     const previewRef = useRef<HTMLDivElement>(null);
+    // Hidden, full-size print target
     const printRef = useRef<HTMLDivElement>(null);
 
     const handleOpenQR = () => {
         window.open(propertyData.qr_code_url, '_blank');
     };
 
+    // react-to-print v3
     const handlePrint = useReactToPrint({
-        contentRef: printRef, // v3 API
+        contentRef: printRef,
         documentTitle: `Official Property Sticker - ${propertyData.item_name}`,
         pageStyle: `
       @page { margin: 5mm; }
@@ -37,9 +40,7 @@ export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRSt
         .sticker { page-break-inside: avoid; }
       }
     `,
-        onAfterPrint: () => {
-            toast.success('Sent to printer');
-        },
+        onAfterPrint: () => toast.success('Sent to printer'),
     });
 
     const StickerPreview = ({ scale = 1 }: { scale?: number }) => (
@@ -265,13 +266,21 @@ export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRSt
                                 Full Preview
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-3xl">
+
+                        {/* aria-describedby={undefined} silences the Radix warning if you really don't want a description */}
+                        <DialogContent className="max-w-3xl" aria-describedby={undefined}>
                             <DialogHeader>
                                 <DialogTitle>Official Property Sticker - Full Size</DialogTitle>
+                                {/* Keep for a11y; visually hidden text is fine */}
+                                <DialogDescription className="sr-only">
+                                    Full-size preview of the property sticker to verify before printing.
+                                </DialogDescription>
                             </DialogHeader>
+
                             <div className="flex justify-center bg-gray-50 p-6">
                                 <StickerPreview />
                             </div>
+
                             <div className="flex justify-center gap-2 pt-4">
                                 <Button onClick={handlePrint}>
                                     <Printer className="mr-2 h-4 w-4" />
