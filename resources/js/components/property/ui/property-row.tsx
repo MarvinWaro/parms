@@ -8,6 +8,7 @@ import { AlertTriangle, Eye, Package, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+
 type PropertyRow = {
     id: string;
     property_number: string;
@@ -15,6 +16,7 @@ type PropertyRow = {
     location: string;
     condition: string;
     acquisition_cost: number | null;
+    qr_code_url?: string;
     // Add these fields for editing
     serial_no?: string;
     model_no?: string;

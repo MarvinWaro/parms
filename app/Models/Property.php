@@ -78,4 +78,14 @@ class Property extends Model
 
         return "PROP-{$year}-{$newNumber}";
     }
+
+    /**
+     * Generate QR code URL for this property
+     * This remains constant regardless of property detail changes
+     * Uses the ULID for permanent identification
+     */
+    public function getQRCodeUrl(): string
+    {
+        return url("/qr/{$this->id}");
+    }
 }
