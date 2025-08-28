@@ -48,7 +48,7 @@ export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRSt
                 style={{
                     width: `${4 * scale}in`,
                     height: `${2.5 * scale}in`,
-                    backgroundImage: 'linear-gradient(135deg, rgba(13, 71, 161, 0.85) 0%, rgba(21, 101, 192, 0.75) 50%, rgba(25, 118, 210, 0.8) 100%), url(/assets/img/bg-ched.jpg)',
+                    backgroundImage: 'linear-gradient(180deg, rgba(21, 101, 192, 0.65) 0%, rgba(13, 72, 161, 0.81) 50%, rgba(5, 4, 42, 1) 100%), url(/assets/img/bg-ched.jpg)',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat',
@@ -71,7 +71,7 @@ export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRSt
                         left: 0,
                         width: px(40),
                         height: px(40),
-                        background: 'linear-gradient(135deg, #1565c0 0%, transparent 70%)',
+                        background: 'linear-gradient(135deg, #1565c0ff 0%, transparent 70%)',
                         borderRadius: `0 0 ${px(20)} 0`,
                         opacity: 0.1,
                     }}
