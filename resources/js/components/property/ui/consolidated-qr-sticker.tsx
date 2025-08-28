@@ -111,7 +111,7 @@ export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRSt
                             alignItems: 'center',
                             justifyContent: 'center',
                             overflow: 'hidden',
-                            boxShadow: '0 2px 8px rgba(21, 101, 192, 0.15)',
+                            boxShadow: '0 2px 8px rgba(112, 192, 21, 0.15)',
                             backdropFilter: 'blur(10px)',
                             border: `${1 * scale}px solid rgba(255, 255, 255, 0.5)`,
                         }}
