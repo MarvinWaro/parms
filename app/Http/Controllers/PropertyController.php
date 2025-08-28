@@ -40,6 +40,7 @@ class PropertyController extends Controller
                     'item_description' => $property->item_description,
                     'remarks' => $property->remarks,
                     'color' => $property->color,
+                    'qr_code_url' => $property->getQRCodeUrl(), // Add QR code URL
                 ];
             });
 
@@ -222,6 +223,7 @@ class PropertyController extends Controller
             'item_description' => $property->item_description,
             'remarks' => $property->remarks,
             'color' => $property->color,
+            'qr_code_url' => $property->getQRCodeUrl(), // Add QR code URL
             'location' => $property->location->location ?? 'N/A',
             'user' => $property->user->name ?? 'N/A',
             'condition' => $property->condition->condition ?? 'N/A',
@@ -238,6 +240,35 @@ class PropertyController extends Controller
             'users' => $users,
             'conditions' => $conditions,
             'funds' => $funds,
+        ]);
+    }
+
+    public function publicView(Property $property): Response
+    {
+        $property->load(['location', 'user', 'condition']);
+
+        $propertyData = [
+            'id' => $property->id,
+            'property_number' => $property->property_number,
+            'item_name' => $property->item_name,
+            'serial_no' => $property->serial_no,
+            'model_no' => $property->model_no,
+            'acquisition_date' => $property->acquisition_date?->format('Y-m-d'),
+            'acquisition_cost' => $property->acquisition_cost,
+            'unit_of_measure' => $property->unit_of_measure,
+            'quantity_per_physical_count' => $property->quantity_per_physical_count,
+            'fund' => $property->fund,
+            'item_description' => $property->item_description,
+            'condition' => $property->condition->condition ?? 'N/A',
+            'location' => $property->location->location ?? 'N/A',
+            'user' => $property->user->name ?? 'N/A',
+            'color' => $property->color,
+            'created_at' => $property->created_at->format('F j, Y g:i A'),
+            'updated_at' => $property->updated_at->format('F j, Y g:i A'),
+        ];
+
+        return Inertia::render('property/public', [
+            'property' => $propertyData,
         ]);
     }
 

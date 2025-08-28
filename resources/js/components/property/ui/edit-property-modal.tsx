@@ -26,6 +26,7 @@ type PropertyData = {
     item_description?: string;
     remarks?: string;
     color?: string;
+    qr_code_url?: string;
 };
 
 type DropdownOption = {

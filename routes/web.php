@@ -11,6 +11,9 @@ use Inertia\Inertia;
 
 Route::get('/', fn () => Inertia::render('welcome'))->name('home');
 
+// PUBLIC QR CODE ROUTE - No authentication required
+Route::get('/qr/{property}', [PropertyController::class, 'publicView'])->name('properties.public');
+
 // Routes for authenticated users (both admin and staff)
 Route::middleware(['auth', 'verified'])->group(function () {
     // Admin dashboard
@@ -51,7 +54,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     // Property deletion - admin only
     Route::delete('/property/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
-
 
     // User management - admin only
     Route::post('/users', [UserController::class, 'store'])->name('users.store');

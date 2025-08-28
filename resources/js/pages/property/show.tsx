@@ -1,4 +1,5 @@
 import EditPropertyModal from '@/components/property/ui/edit-property-modal';
+import ConsolidatedQRSticker from '@/components/property/ui/consolidated-qr-sticker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ type PropertyData = {
     item_description?: string;
     remarks?: string;
     color?: string;
+    qr_code_url?: string;
     location: string;
     user: string;
     condition: string;
@@ -82,12 +84,6 @@ export default function PropertyShow() {
             loading: 'Deleting property...',
             success: 'Property deleted successfully!',
             error: (message) => message,
-            duration: 2000,
-        });
-    }
-
-    function handlePrintSticker() {
-        toast.info('Print Sticker feature coming soon!', {
             duration: 2000,
         });
     }
@@ -311,6 +307,19 @@ export default function PropertyShow() {
                                     </CardContent>
                                 </Card>
 
+                                {/* QR Code & Official Sticker */}
+                                {property.qr_code_url && (
+                                    <ConsolidatedQRSticker
+                                        propertyData={{
+                                            item_name: property.item_name,
+                                            property_number: property.property_number,
+                                            qr_code_url: property.qr_code_url,
+                                            location: property.location,
+                                            user: property.user
+                                        }}
+                                    />
+                                )}
+
                                 {/* Quick Actions */}
                                 <Card>
                                     <CardHeader>
@@ -320,11 +329,6 @@ export default function PropertyShow() {
                                         <Button variant="outline" className="w-full justify-start" onClick={() => setOpenEdit(true)}>
                                             <Pencil className="mr-2 h-4 w-4" />
                                             Edit Property
-                                        </Button>
-
-                                        <Button variant="outline" className="w-full justify-start" onClick={handlePrintSticker}>
-                                            <Printer className="mr-2 h-4 w-4" />
-                                            Print Sticker
                                         </Button>
 
                                         {/* Delete Popover */}
