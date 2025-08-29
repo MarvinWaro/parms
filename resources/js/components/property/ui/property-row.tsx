@@ -1,13 +1,13 @@
 import EditPropertyModal from '@/components/property/ui/edit-property-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { useForm } from '@inertiajs/react';
 import { AlertTriangle, Eye, Package, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-
 
 type PropertyRow = {
     id: string;
@@ -49,11 +49,22 @@ interface PropertyRowTemplateProps {
     users: DropdownOption[];
     conditions: DropdownOption[];
     funds: FundOption[];
+    isSelected: boolean;
+    onSelectionChange: (checked: boolean) => void;
 }
 
 const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 2 });
 
-export default function PropertyRowTemplate({ row, index, locations, users, conditions, funds }: PropertyRowTemplateProps) {
+export default function PropertyRowTemplate({
+    row,
+    index,
+    locations,
+    users,
+    conditions,
+    funds,
+    isSelected,
+    onSelectionChange
+}: PropertyRowTemplateProps) {
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
 
@@ -101,6 +112,13 @@ export default function PropertyRowTemplate({ row, index, locations, users, cond
     return (
         <>
             <TableRow className="group border-b border-border/30 transition-all duration-150 hover:bg-muted/20 hover:shadow-sm">
+                <TableCell className="px-6 py-4 align-middle">
+                    <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={onSelectionChange}
+                        aria-label={`Select ${row.item_name}`}
+                    />
+                </TableCell>
                 <TableCell className="px-6 py-4 align-middle">
                     <div className="flex items-center gap-4">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20 transition-all duration-200 group-hover:bg-primary/15 group-hover:ring-primary/30">

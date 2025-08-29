@@ -1,4 +1,5 @@
 import PropertyRowTemplate from '@/components/property/ui/property-row';
+import BulkPrintModal from '@/components/property/ui/bulk-print-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,11 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Package, Plus, Search } from 'lucide-react';
-import { FormEvent, useState } from 'react';
+import { Package, Plus, Search, Printer, X } from 'lucide-react';
+import { FormEvent, useState, useMemo, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Property', href: '/property' }];
@@ -36,6 +39,7 @@ type PropertyRow = {
     item_description?: string;
     remarks?: string;
     color?: string;
+    qr_code_url?: string;
 };
 
 type DropdownOption = {
@@ -82,6 +86,11 @@ export default function PropertyIndex() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [openCreate, setOpenCreate] = useState(false);
+    const [selectedPropertyIds, setSelectedPropertyIds] = useState<Set<string>>(new Set());
+    const [openBulkPrint, setOpenBulkPrint] = useState(false);
+
+    // Ref for handling checkbox indeterminate state
+    const selectAllCheckboxRef = useRef<HTMLButtonElement>(null);
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm(initialForm);
 
@@ -100,6 +109,53 @@ export default function PropertyIndex() {
             (r.acquisition_cost !== null && peso.format(r.acquisition_cost).toLowerCase().includes(q))
         );
     });
+
+    // Get selected properties data for bulk operations
+    const selectedProperties = useMemo(() => {
+        return properties.filter(property => selectedPropertyIds.has(property.id))
+            .map(property => ({
+                id: property.id,
+                item_name: property.item_name,
+                property_number: property.property_number,
+                qr_code_url: property.qr_code_url || route('properties.public', property.id),
+                location: property.location,
+                user: users.find(u => u.id === property.user_id)?.name
+            }));
+    }, [selectedPropertyIds, properties, users]);
+
+    // Selection handlers
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedPropertyIds(new Set(filteredRows.map(row => row.id)));
+        } else {
+            setSelectedPropertyIds(new Set());
+        }
+    };
+
+    const handleSelectProperty = (propertyId: string, checked: boolean) => {
+        const newSelection = new Set(selectedPropertyIds);
+        if (checked) {
+            newSelection.add(propertyId);
+        } else {
+            newSelection.delete(propertyId);
+        }
+        setSelectedPropertyIds(newSelection);
+    };
+
+    const handleRemoveFromSelection = (propertyId: string) => {
+        const newSelection = new Set(selectedPropertyIds);
+        newSelection.delete(propertyId);
+        setSelectedPropertyIds(newSelection);
+    };
+
+    const handleClearSelection = () => {
+        setSelectedPropertyIds(new Set());
+    };
+
+    // Check if all filtered rows are selected
+    const allFilteredSelected = filteredRows.length > 0 &&
+        filteredRows.every(row => selectedPropertyIds.has(row.id));
+    const someFilteredSelected = filteredRows.some(row => selectedPropertyIds.has(row.id));
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -508,7 +564,7 @@ export default function PropertyIndex() {
                         </div>
                     </div>
 
-                    {/* Stats and Search Section */}
+                    {/* Stats, Search, and Bulk Actions Section */}
                     <div className="flex flex-col gap-4 px-6 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                             <Badge variant="secondary" className="px-3 py-1.5 text-sm font-medium">
@@ -519,17 +575,51 @@ export default function PropertyIndex() {
                                     {filteredRows.length} filtered
                                 </Badge>
                             )}
+                            {selectedPropertyIds.size > 0 && (
+                                <Badge variant="default" className="px-3 py-1.5 text-sm bg-blue-600">
+                                    {selectedPropertyIds.size} selected
+                                </Badge>
+                            )}
                         </div>
 
-                        {/* Search */}
-                        <div className="relative w-full max-w-sm">
-                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                placeholder="Search properties..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 transition-all duration-200"
-                            />
+                        <div className="flex items-center gap-3">
+                            {/* Bulk Actions */}
+                            {selectedPropertyIds.size > 0 && (
+                                <>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setOpenBulkPrint(true)}
+                                            className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                                        >
+                                            <Printer className="mr-2 h-4 w-4" />
+                                            Print Stickers ({selectedPropertyIds.size})
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleClearSelection}
+                                            className="text-muted-foreground hover:text-destructive"
+                                        >
+                                            <X className="mr-1 h-4 w-4" />
+                                            Clear
+                                        </Button>
+                                    </div>
+                                    <Separator orientation="vertical" className="h-6" />
+                                </>
+                            )}
+
+                            {/* Search */}
+                            <div className="relative w-full max-w-sm">
+                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search properties..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-10 transition-all duration-200"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -540,6 +630,14 @@ export default function PropertyIndex() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="border-b border-border/50 bg-muted/30 hover:bg-muted/30">
+                                            <TableHead className="h-14 w-12 px-6">
+                                                <Checkbox
+                                                    ref={selectAllCheckboxRef}
+                                                    checked={allFilteredSelected}
+                                                    onCheckedChange={handleSelectAll}
+                                                    aria-label="Select all properties"
+                                                />
+                                            </TableHead>
                                             <TableHead className="h-14 w-[28rem] px-6 text-sm font-semibold text-foreground/90">
                                                 Item / Property No.
                                             </TableHead>
@@ -564,6 +662,8 @@ export default function PropertyIndex() {
                                                 users={users}
                                                 conditions={conditions}
                                                 funds={funds}
+                                                isSelected={selectedPropertyIds.has(row.id)}
+                                                onSelectionChange={(checked) => handleSelectProperty(row.id, checked)}
                                             />
                                         ))}
                                     </TableBody>
@@ -607,6 +707,15 @@ export default function PropertyIndex() {
                     </Card>
                 </div>
             </div>
+
+            {/* Bulk Print Modal */}
+            <BulkPrintModal
+                open={openBulkPrint}
+                onOpenChange={setOpenBulkPrint}
+                selectedProperties={selectedProperties}
+                onRemoveProperty={handleRemoveFromSelection}
+                onClearAll={handleClearSelection}
+            />
         </AppLayout>
     );
 }
