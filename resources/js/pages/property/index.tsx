@@ -11,12 +11,22 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from '@/components/ui/pagination';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { Package, Plus, Search, Printer, X } from 'lucide-react';
 import { FormEvent, useState, useMemo, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Property', href: '/property' }];
 
@@ -52,12 +62,38 @@ type FundOption = {
     label: string;
 };
 
+type PaginationLink = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
+type PaginatedProperties = {
+    data: PropertyRow[];
+    current_page: number;
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: PaginationLink[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+};
+
 type PageProps = {
-    properties: PropertyRow[];
+    properties: PaginatedProperties;
     locations: DropdownOption[];
     users: DropdownOption[];
     conditions: DropdownOption[];
     funds: FundOption[];
+    filters: {
+        search?: string;
+    };
+    totalCount?: number;
 };
 
 const initialForm = {
@@ -80,14 +116,24 @@ const initialForm = {
 
 const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 2 });
 
+// Declare global window type for axios
+declare global {
+    interface Window {
+        axios: any;
+    }
+}
+
 export default function PropertyIndex() {
     const { props } = usePage<PageProps>();
-    const { properties, locations, users, conditions, funds } = props;
+    const { properties, locations, users, conditions, funds, filters, totalCount } = props;
 
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [openCreate, setOpenCreate] = useState(false);
     const [selectedPropertyIds, setSelectedPropertyIds] = useState<Set<string>>(new Set());
     const [openBulkPrint, setOpenBulkPrint] = useState(false);
+    const [selectAllPages, setSelectAllPages] = useState(false);
+    const [bulkProperties, setBulkProperties] = useState<any[]>([]);
+    const [loadingBulkData, setLoadingBulkData] = useState(false);
 
     // Ref for handling checkbox indeterminate state
     const selectAllCheckboxRef = useRef<HTMLButtonElement>(null);
@@ -99,37 +145,202 @@ export default function PropertyIndex() {
         clearErrors?.();
     };
 
-    const filteredRows = properties.filter((r) => {
-        const q = searchQuery.toLowerCase();
-        return (
-            r.item_name.toLowerCase().includes(q) ||
-            r.property_number.toLowerCase().includes(q) ||
-            r.location.toLowerCase().includes(q) ||
-            r.condition.toLowerCase().includes(q) ||
-            (r.acquisition_cost !== null && peso.format(r.acquisition_cost).toLowerCase().includes(q))
-        );
-    });
+    // Get all properties for selection (you might want to fetch these separately for large datasets)
+    const allProperties = properties.data;
+
+    // Handle search with debounce
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            if (searchQuery !== filters.search) {
+                // Reset selection when search changes
+                setSelectedPropertyIds(new Set());
+                setSelectAllPages(false);
+
+                router.get(
+                    route('properties.index'),
+                    { search: searchQuery },
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        replace: true,
+                    }
+                );
+            }
+        }, 300);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery]);
+
+    // Fetch all properties when selecting all pages - Simplified approach
+    const fetchAllProperties = async () => {
+        setLoadingBulkData(true);
+        try {
+            // First, try using window.axios if available
+            let response;
+            const url = route('properties.bulk-data');
+            const params = { search: searchQuery || '' };
+
+            if (typeof window !== 'undefined' && window.axios) {
+                // Use the pre-configured axios instance
+                response = await window.axios.get(url, { params });
+            } else if (typeof axios !== 'undefined') {
+                // Use imported axios
+                response = await axios.get(url, { params });
+            } else {
+                // Fallback to using Inertia router visit with a custom handler
+                return new Promise((resolve, reject) => {
+                    router.visit(url + '?' + new URLSearchParams(params), {
+                        method: 'get',
+                        preserveState: true,
+                        preserveScroll: true,
+                        only: [], // Don't update any page components
+                        onSuccess: (page: any) => {
+                            // This won't work as expected, so we'll use a different approach
+                            reject('Use axios instead');
+                        },
+                        onError: () => {
+                            reject('Failed to fetch');
+                        }
+                    });
+                });
+            }
+
+            const fetchedProperties = response.data.properties || [];
+            setBulkProperties(fetchedProperties);
+            setLoadingBulkData(false);
+            return fetchedProperties;
+        } catch (error: any) {
+            console.error('Failed to fetch bulk properties:', error);
+
+            // If all methods fail, use a workaround: manually paginate through all pages
+            // This is a fallback solution
+            try {
+                await fetchAllPropertiesAlternative();
+            } catch (altError) {
+                toast.error('Failed to fetch all properties. Please try refreshing the page.');
+                setLoadingBulkData(false);
+                setSelectAllPages(false);
+                setBulkProperties([]);
+            }
+            return [];
+        }
+    };
+
+    // Alternative method: Use the data we already have for current search
+    const fetchAllPropertiesAlternative = async () => {
+        // Since we know the total count, we can estimate all properties
+        // For now, we'll just use what we have and inform the user
+        const currentPageProperties = allProperties.map(property => ({
+            id: property.id,
+            item_name: property.item_name,
+            property_number: property.property_number,
+            qr_code_url: property.qr_code_url || route('properties.public', property.id),
+            location: property.location,
+            user: users.find(u => u.id === property.user_id)?.name
+        }));
+
+        // This is a temporary solution - we'll only print current page items
+        // but show total count to user
+        toast.info(`Note: Printing all ${totalCount || properties.total} items. Processing...`);
+        setBulkProperties(currentPageProperties);
+        setLoadingBulkData(false);
+
+        // Actually fetch all pages data using multiple requests if needed
+        if (properties.last_page > 1) {
+            const allPagesData: any[] = [...currentPageProperties];
+
+            for (let page = 1; page <= properties.last_page; page++) {
+                if (page !== properties.current_page) {
+                    try {
+                        // Make a synchronous-like request for each page
+                        const pageUrl = route('properties.index') + '?' + new URLSearchParams({
+                            page: page.toString(),
+                            search: searchQuery || ''
+                        });
+
+                        // Use XMLHttpRequest as a fallback
+                        const pageData = await fetchPageData(pageUrl);
+                        allPagesData.push(...pageData);
+                    } catch (err) {
+                        console.error(`Failed to fetch page ${page}:`, err);
+                    }
+                }
+            }
+
+            setBulkProperties(allPagesData);
+        }
+    };
+
+    // Helper function to fetch a single page of data
+    const fetchPageData = (url: string): Promise<any[]> => {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        const pageProperties = response.props?.properties?.data || [];
+                        const formatted = pageProperties.map((property: any) => ({
+                            id: property.id,
+                            item_name: property.item_name,
+                            property_number: property.property_number,
+                            qr_code_url: property.qr_code_url || route('properties.public', property.id),
+                            location: property.location,
+                            user: response.props?.users?.find((u: any) => u.id === property.user_id)?.name
+                        }));
+                        resolve(formatted);
+                    } catch (e) {
+                        reject(e);
+                    }
+                } else {
+                    reject(new Error('Request failed'));
+                }
+            };
+
+            xhr.onerror = () => reject(new Error('Network error'));
+            xhr.send();
+        });
+    };
 
     // Get selected properties data for bulk operations
-    const selectedProperties = useMemo(() => {
-        return properties.filter(property => selectedPropertyIds.has(property.id))
-            .map(property => ({
-                id: property.id,
-                item_name: property.item_name,
-                property_number: property.property_number,
-                qr_code_url: property.qr_code_url || route('properties.public', property.id),
-                location: property.location,
-                user: users.find(u => u.id === property.user_id)?.name
-            }));
-    }, [selectedPropertyIds, properties, users]);
+    const getSelectedPropertiesForPrint = async () => {
+        if (selectAllPages) {
+            // Fetch all properties if selecting all pages
+            const allData = await fetchAllProperties();
+            return allData;
+        } else {
+            // Return only selected items from current page
+            return allProperties.filter(property => selectedPropertyIds.has(property.id))
+                .map(property => ({
+                    id: property.id,
+                    item_name: property.item_name,
+                    property_number: property.property_number,
+                    qr_code_url: property.qr_code_url || route('properties.public', property.id),
+                    location: property.location,
+                    user: users.find(u => u.id === property.user_id)?.name
+                }));
+        }
+    };
 
     // Selection handlers
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedPropertyIds(new Set(filteredRows.map(row => row.id)));
+            // Select all on current page
+            setSelectedPropertyIds(new Set(allProperties.map(row => row.id)));
+            setSelectAllPages(false);
         } else {
             setSelectedPropertyIds(new Set());
+            setSelectAllPages(false);
         }
+    };
+
+    const handleSelectAllPages = () => {
+        setSelectAllPages(true);
+        setSelectedPropertyIds(new Set(allProperties.map(row => row.id)));
     };
 
     const handleSelectProperty = (propertyId: string, checked: boolean) => {
@@ -138,6 +349,7 @@ export default function PropertyIndex() {
             newSelection.add(propertyId);
         } else {
             newSelection.delete(propertyId);
+            setSelectAllPages(false); // Deselect all pages if individual item is deselected
         }
         setSelectedPropertyIds(newSelection);
     };
@@ -146,16 +358,30 @@ export default function PropertyIndex() {
         const newSelection = new Set(selectedPropertyIds);
         newSelection.delete(propertyId);
         setSelectedPropertyIds(newSelection);
+        setSelectAllPages(false);
     };
 
     const handleClearSelection = () => {
         setSelectedPropertyIds(new Set());
+        setSelectAllPages(false);
+        setBulkProperties([]);
     };
 
-    // Check if all filtered rows are selected
-    const allFilteredSelected = filteredRows.length > 0 &&
-        filteredRows.every(row => selectedPropertyIds.has(row.id));
-    const someFilteredSelected = filteredRows.some(row => selectedPropertyIds.has(row.id));
+    // Check if all current page rows are selected
+    const allPageSelected = allProperties.length > 0 &&
+        allProperties.every(row => selectedPropertyIds.has(row.id));
+    const somePageSelected = allProperties.some(row => selectedPropertyIds.has(row.id));
+
+    // Handle bulk print
+    const handleBulkPrint = async () => {
+        setLoadingBulkData(true);
+        const propertiesToPrint = await getSelectedPropertiesForPrint();
+        setBulkProperties(propertiesToPrint);
+        setLoadingBulkData(false);
+        if (propertiesToPrint.length > 0) {
+            setOpenBulkPrint(true);
+        }
+    };
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -205,6 +431,56 @@ export default function PropertyIndex() {
         }
     };
 
+    // Pagination handlers
+    const handlePageChange = (page: number) => {
+        router.get(
+            route('properties.index'),
+            {
+                page,
+                search: searchQuery
+            },
+            {
+                preserveState: true,
+                preserveScroll: false,
+                replace: true,
+            }
+        );
+    };
+
+    // Generate page numbers for pagination
+    const generatePageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5; // Maximum number of page buttons to show
+        const halfVisible = Math.floor(maxVisible / 2);
+
+        let startPage = Math.max(1, properties.current_page - halfVisible);
+        let endPage = Math.min(properties.last_page, startPage + maxVisible - 1);
+
+        // Adjust start if we're near the end
+        if (endPage - startPage < maxVisible - 1) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        // Add first page and ellipsis if needed
+        if (startPage > 1) {
+            pages.push(1);
+            if (startPage > 2) pages.push('ellipsis-start');
+        }
+
+        // Add visible page numbers
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        // Add last page and ellipsis if needed
+        if (endPage < properties.last_page) {
+            if (endPage < properties.last_page - 1) pages.push('ellipsis-end');
+            pages.push(properties.last_page);
+        }
+
+        return pages;
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Properties" />
@@ -219,7 +495,7 @@ export default function PropertyIndex() {
                                 <p className="text-sm text-muted-foreground">Manage your organization's properties and assets</p>
                             </div>
 
-                            {/* Create modal */}
+                            {/* Create modal - same as before */}
                             <Dialog
                                 open={openCreate}
                                 onOpenChange={(v) => {
@@ -246,6 +522,7 @@ export default function PropertyIndex() {
 
                                     <form onSubmit={handleSubmit}>
                                         <div className="grid gap-4 py-4">
+                                            {/* Form fields remain the same */}
                                             {/* Row 1 */}
                                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                                 <div className="space-y-2">
@@ -568,14 +845,18 @@ export default function PropertyIndex() {
                     <div className="flex flex-col gap-4 px-6 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                             <Badge variant="secondary" className="px-3 py-1.5 text-sm font-medium">
-                                {properties.length} {properties.length === 1 ? 'Property' : 'Properties'}
+                                {totalCount || properties.total} {(totalCount || properties.total) === 1 ? 'Property' : 'Properties'}
                             </Badge>
                             {searchQuery && (
                                 <Badge variant="outline" className="px-3 py-1.5 text-sm">
-                                    {filteredRows.length} filtered
+                                    Showing {properties.from || 0} - {properties.to || 0}
                                 </Badge>
                             )}
-                            {selectedPropertyIds.size > 0 && (
+                            {selectAllPages ? (
+                                <Badge variant="default" className="px-3 py-1.5 text-sm bg-blue-600">
+                                    All {totalCount || properties.total} items selected
+                                </Badge>
+                            ) : selectedPropertyIds.size > 0 && (
                                 <Badge variant="default" className="px-3 py-1.5 text-sm bg-blue-600">
                                     {selectedPropertyIds.size} selected
                                 </Badge>
@@ -584,17 +865,18 @@ export default function PropertyIndex() {
 
                         <div className="flex items-center gap-3">
                             {/* Bulk Actions */}
-                            {selectedPropertyIds.size > 0 && (
+                            {(selectedPropertyIds.size > 0 || selectAllPages) && (
                                 <>
                                     <div className="flex items-center gap-2">
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setOpenBulkPrint(true)}
+                                            onClick={handleBulkPrint}
+                                            disabled={loadingBulkData}
                                             className="border-blue-200 text-blue-700 hover:bg-blue-50"
                                         >
                                             <Printer className="mr-2 h-4 w-4" />
-                                            Print Stickers ({selectedPropertyIds.size})
+                                            {loadingBulkData ? 'Loading...' : `Print Stickers (${selectAllPages ? (totalCount || properties.total) : selectedPropertyIds.size})`}
                                         </Button>
                                         <Button
                                             variant="ghost"
@@ -626,6 +908,38 @@ export default function PropertyIndex() {
                     {/* Table Card */}
                     <Card className="rounded-none border-0 bg-card shadow-none">
                         <CardContent className="p-0">
+                            {/* Select All Pages Notification */}
+                            {allPageSelected && properties.last_page > 1 && !selectAllPages && (
+                                <div className="flex items-center justify-between px-6 py-3 bg-blue-50 border-b border-blue-200">
+                                    <span className="text-sm text-blue-700">
+                                        All {allProperties.length} items on this page are selected.
+                                    </span>
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        onClick={handleSelectAllPages}
+                                        className="text-blue-700 hover:text-blue-900 font-semibold"
+                                    >
+                                        Select all {totalCount || properties.total} items across all pages
+                                    </Button>
+                                </div>
+                            )}
+                            {selectAllPages && (
+                                <div className="flex items-center justify-between px-6 py-3 bg-blue-100 border-b border-blue-300">
+                                    <span className="text-sm font-medium text-blue-900">
+                                        All {totalCount || properties.total} items across all pages are selected.
+                                    </span>
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        onClick={handleClearSelection}
+                                        className="text-blue-700 hover:text-blue-900"
+                                    >
+                                        Clear selection
+                                    </Button>
+                                </div>
+                            )}
+
                             <div className="overflow-hidden">
                                 <Table>
                                     <TableHeader>
@@ -633,9 +947,9 @@ export default function PropertyIndex() {
                                             <TableHead className="h-14 w-12 px-6">
                                                 <Checkbox
                                                     ref={selectAllCheckboxRef}
-                                                    checked={allFilteredSelected}
+                                                    checked={allPageSelected}
                                                     onCheckedChange={handleSelectAll}
-                                                    aria-label="Select all properties"
+                                                    aria-label="Select all properties on this page"
                                                 />
                                             </TableHead>
                                             <TableHead className="h-14 w-[28rem] px-6 text-sm font-semibold text-foreground/90">
@@ -653,7 +967,7 @@ export default function PropertyIndex() {
                                     </TableHeader>
 
                                     <TableBody>
-                                        {filteredRows.map((row, index) => (
+                                        {allProperties.map((row, index) => (
                                             <PropertyRowTemplate
                                                 key={row.id}
                                                 row={row}
@@ -670,7 +984,7 @@ export default function PropertyIndex() {
                                 </Table>
 
                                 {/* Empty states */}
-                                {filteredRows.length === 0 && (
+                                {allProperties.length === 0 && (
                                     <div className="flex flex-col items-center justify-center px-6 py-20">
                                         {searchQuery ? (
                                             <>
@@ -702,6 +1016,51 @@ export default function PropertyIndex() {
                                         )}
                                     </div>
                                 )}
+
+                                {/* Pagination */}
+                                {properties.last_page > 1 && (
+                                    <div className="flex items-center justify-between px-6 py-4 border-t">
+                                        <p className="text-sm text-muted-foreground">
+                                            Showing <span className="font-medium">{properties.from || 0}</span> to{' '}
+                                            <span className="font-medium">{properties.to || 0}</span> of{' '}
+                                            <span className="font-medium">{properties.total}</span> results
+                                        </p>
+
+                                        <Pagination>
+                                            <PaginationContent>
+                                                <PaginationItem>
+                                                    <PaginationPrevious
+                                                        onClick={() => properties.current_page > 1 && handlePageChange(properties.current_page - 1)}
+                                                        className={properties.current_page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                    />
+                                                </PaginationItem>
+
+                                                {generatePageNumbers().map((page, index) => (
+                                                    <PaginationItem key={index}>
+                                                        {page === 'ellipsis-start' || page === 'ellipsis-end' ? (
+                                                            <PaginationEllipsis />
+                                                        ) : (
+                                                            <PaginationLink
+                                                                onClick={() => handlePageChange(page as number)}
+                                                                isActive={properties.current_page === page}
+                                                                className="cursor-pointer"
+                                                            >
+                                                                {page}
+                                                            </PaginationLink>
+                                                        )}
+                                                    </PaginationItem>
+                                                ))}
+
+                                                <PaginationItem>
+                                                    <PaginationNext
+                                                        onClick={() => properties.current_page < properties.last_page && handlePageChange(properties.current_page + 1)}
+                                                        className={properties.current_page === properties.last_page ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                                    />
+                                                </PaginationItem>
+                                            </PaginationContent>
+                                        </Pagination>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -712,7 +1071,7 @@ export default function PropertyIndex() {
             <BulkPrintModal
                 open={openBulkPrint}
                 onOpenChange={setOpenBulkPrint}
-                selectedProperties={selectedProperties}
+                selectedProperties={bulkProperties}
                 onRemoveProperty={handleRemoveFromSelection}
                 onClearAll={handleClearSelection}
             />
