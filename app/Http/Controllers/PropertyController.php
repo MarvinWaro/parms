@@ -10,39 +10,60 @@ use App\Models\User;
 use App\Models\Condition;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 
 class PropertyController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $properties = Property::with(['location', 'user', 'condition'])
-            ->latest()
-            ->get()
-            ->map(function ($property) {
-                return [
-                    'id' => $property->id,
-                    'property_number' => $property->property_number,
-                    'item_name' => $property->item_name,
-                    'location' => $property->location->location ?? 'N/A',
-                    'condition' => $property->condition->condition ?? 'N/A',
-                    'acquisition_cost' => $property->acquisition_cost,
-                    // Add all fields needed for editing
-                    'serial_no' => $property->serial_no,
-                    'model_no' => $property->model_no,
-                    'acquisition_date' => $property->acquisition_date?->format('Y-m-d'),
-                    'unit_of_measure' => $property->unit_of_measure,
-                    'quantity_per_physical_count' => $property->quantity_per_physical_count,
-                    'fund' => $property->fund,
-                    'location_id' => $property->location_id,
-                    'user_id' => $property->user_id,
-                    'condition_id' => $property->condition_id,
-                    'item_description' => $property->item_description,
-                    'remarks' => $property->remarks,
-                    'color' => $property->color,
-                    'qr_code_url' => $property->getQRCodeUrl(), // Add QR code URL
-                ];
+        $query = Property::with(['location', 'user', 'condition'])->latest();
+
+        // Handle search
+        if ($search = $request->get('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('item_name', 'like', "%{$search}%")
+                  ->orWhere('property_number', 'like', "%{$search}%")
+                  ->orWhereHas('location', function($q) use ($search) {
+                      $q->where('location', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('condition', function($q) use ($search) {
+                      $q->where('condition', 'like', "%{$search}%");
+                  });
             });
+        }
+
+        // Get total count before pagination
+        $totalCount = $query->count();
+
+        // Paginate with 10 items per page
+        $properties = $query->paginate(10)->withQueryString();
+
+        // Transform the paginated data
+        $properties->through(function ($property) {
+            return [
+                'id' => $property->id,
+                'property_number' => $property->property_number,
+                'item_name' => $property->item_name,
+                'location' => $property->location->location ?? 'N/A',
+                'condition' => $property->condition->condition ?? 'N/A',
+                'acquisition_cost' => $property->acquisition_cost,
+                // Add all fields needed for editing
+                'serial_no' => $property->serial_no,
+                'model_no' => $property->model_no,
+                'acquisition_date' => $property->acquisition_date?->format('Y-m-d'),
+                'unit_of_measure' => $property->unit_of_measure,
+                'quantity_per_physical_count' => $property->quantity_per_physical_count,
+                'fund' => $property->fund,
+                'location_id' => $property->location_id,
+                'user_id' => $property->user_id,
+                'condition_id' => $property->condition_id,
+                'item_description' => $property->item_description,
+                'remarks' => $property->remarks,
+                'color' => $property->color,
+                'qr_code_url' => $property->getQRCodeUrl(), // Add QR code URL
+            ];
+        });
 
         // Simplified queries - get all data, then transform
         $locations = Location::all()->map(function($location) {
@@ -72,6 +93,51 @@ class PropertyController extends Controller
             'users' => $users,
             'conditions' => $conditions,
             'funds' => $funds,
+            'filters' => $request->only(['search']),
+            'totalCount' => $totalCount, // Add total count for "select all" functionality
+        ]);
+    }
+
+    /**
+     * Get all properties for bulk operations (like bulk print)
+     */
+    public function bulkData(Request $request): JsonResponse
+    {
+        $query = Property::with(['location', 'user', 'condition'])->latest();
+
+        // Handle search (same as index)
+        if ($search = $request->get('search')) {
+            $query->where(function($q) use ($search) {
+                $q->where('item_name', 'like', "%{$search}%")
+                  ->orWhere('property_number', 'like', "%{$search}%")
+                  ->orWhereHas('location', function($q) use ($search) {
+                      $q->where('location', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('condition', function($q) use ($search) {
+                      $q->where('condition', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // If specific IDs are requested, filter by them
+        if ($ids = $request->get('ids')) {
+            $query->whereIn('id', $ids);
+        }
+
+        // Get all properties without pagination for bulk operations
+        $properties = $query->get()->map(function ($property) {
+            return [
+                'id' => $property->id,
+                'item_name' => $property->item_name,
+                'property_number' => $property->property_number,
+                'qr_code_url' => $property->getQRCodeUrl(),
+                'location' => $property->location->location ?? 'N/A',
+                'user' => $property->user->name ?? 'N/A',
+            ];
+        });
+
+        return response()->json([
+            'properties' => $properties,
         ]);
     }
 

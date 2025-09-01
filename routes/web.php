@@ -28,6 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Property routes - accessible to both admin and staff
     Route::get('/property', [PropertyController::class, 'index'])->name('properties.index');
+    Route::get('/property/bulk-data', [PropertyController::class, 'bulkData'])->name('properties.bulk-data'); // Add bulk data route
     Route::get('/property/{property}', [PropertyController::class, 'show'])->name('properties.show');
 });
 
