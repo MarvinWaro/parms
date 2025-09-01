@@ -1,4 +1,5 @@
-import { useRef, useEffect } from 'react';
+// BulkPrintModal.tsx
+import { useEffect, useRef } from 'react';
 import QRCode from 'react-qr-code';
 import { useReactToPrint } from 'react-to-print';
 import { toast } from 'sonner';
@@ -16,11 +17,13 @@ interface BulkPrintModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     selectedProperties: PropertyData[];
-    onRemoveProperty: (propertyId: string) => void;
+    onRemoveProperty: (propertyId: string) => void; // kept to match your props, not used here
     onClearAll: () => void;
 }
 
-// Individual sticker component for bulk printing
+/* ------------------------------------------------------------------ */
+/* Sticker (unchanged except for being in this file)                   */
+/* ------------------------------------------------------------------ */
 const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; scale?: number }) => {
     const px = (n: number) => `${n * scale}px`;
 
@@ -30,7 +33,8 @@ const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; 
             style={{
                 width: `${4 * scale}in`,
                 height: `${2.5 * scale}in`,
-                backgroundImage: 'linear-gradient(180deg, rgba(21, 101, 192, 0.65) 0%, rgba(13, 72, 161, 0.81) 50%, rgba(5, 4, 42, 1) 100%), url(/assets/img/bg-ched.jpg)',
+                backgroundImage:
+                    'linear-gradient(180deg, rgba(21, 101, 192, 0.65) 0%, rgba(13, 72, 161, 0.81) 50%, rgba(5, 4, 42, 1) 100%), url(/assets/img/bg-ched.jpg)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
@@ -46,7 +50,7 @@ const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; 
                 breakInside: 'avoid',
             }}
         >
-            {/* Decorative corner elements */}
+            {/* Decorative corners */}
             <div
                 style={{
                     position: 'absolute',
@@ -102,15 +106,11 @@ const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; 
                     <img
                         src="/assets/img/bagong-pilipinas.png"
                         alt="Bagong Pilipinas"
-                        style={{
-                            width: px(30),
-                            height: px(30),
-                            objectFit: 'contain',
-                        }}
+                        style={{ width: px(30), height: px(30), objectFit: 'contain' }}
                     />
                 </div>
 
-                {/* Center heading */}
+                {/* Heading */}
                 <div style={{ textAlign: 'center', position: 'relative' }}>
                     <div
                         style={{
@@ -180,15 +180,7 @@ const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; 
                         border: `${1 * scale}px solid rgba(255, 255, 255, 0.5)`,
                     }}
                 >
-                    <img
-                        src="/assets/img/ched-logo.png"
-                        alt="CHED"
-                        style={{
-                            width: px(30),
-                            height: px(30),
-                            objectFit: 'contain',
-                        }}
-                    />
+                    <img src="/assets/img/ched-logo.png" alt="CHED" style={{ width: px(30), height: px(30), objectFit: 'contain' }} />
                 </div>
             </div>
 
@@ -202,7 +194,7 @@ const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; 
                     paddingTop: px(4),
                 }}
             >
-                {/* LEFT: Article & Property No. */}
+                {/* Left column */}
                 <div
                     style={{
                         flex: 1,
@@ -298,15 +290,8 @@ const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; 
                     </div>
                 </div>
 
-                {/* RIGHT: QR Code */}
-                <div
-                    style={{
-                        minWidth: px(100),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
-                >
+                {/* Right column (QR) */}
+                <div style={{ minWidth: px(100), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div
                         style={{
                             background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
@@ -319,12 +304,7 @@ const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; 
                     >
                         <QRCode
                             size={84 * scale}
-                            style={{
-                                height: 'auto',
-                                maxWidth: '100%',
-                                width: '100%',
-                                filter: 'contrast(1.1)',
-                            }}
+                            style={{ height: 'auto', maxWidth: '100%', width: '100%', filter: 'contrast(1.1)' }}
                             value={propertyData.qr_code_url}
                             viewBox="0 0 256 256"
                         />
@@ -352,94 +332,112 @@ const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; 
                     marginTop: px(5),
                 }}
             >
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    textAlign: 'center',
-                }}>
-                    <div style={{
-                        fontSize: px(7),
-                        color: '#ffffff',
-                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
-                        fontWeight: 500,
-                        marginBottom: px(2),
-                    }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100%',
+                        textAlign: 'center',
+                    }}
+                >
+                    <div
+                        style={{
+                            fontSize: px(7),
+                            color: '#ffffff',
+                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
+                            fontWeight: 500,
+                            marginBottom: px(2),
+                        }}
+                    >
                         ______________________
                     </div>
-                    <div style={{
-                        fontSize: px(7),
-                        color: '#e3f2fd',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: px(0.4),
-                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
-                        lineHeight: 1.1,
-                    }}>
+                    <div
+                        style={{
+                            fontSize: px(7),
+                            color: '#e3f2fd',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: px(0.4),
+                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
+                            lineHeight: 1.1,
+                        }}
+                    >
                         COA AUDITOR
                     </div>
                 </div>
 
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    textAlign: 'center',
-                }}>
-                    <div style={{
-                        fontSize: px(7),
-                        color: '#ffffff',
-                        fontWeight: 800,
-                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
-                        lineHeight: 1.1,
-                        marginBottom: px(2),
-                    }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100%',
+                        textAlign: 'center',
+                    }}
+                >
+                    <div
+                        style={{
+                            fontSize: px(7),
+                            color: '#ffffff',
+                            fontWeight: 800,
+                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
+                            lineHeight: 1.1,
+                            marginBottom: px(2),
+                        }}
+                    >
                         Glaiza S. Ondoy
                     </div>
-                    <div style={{
-                        fontSize: px(7),
-                        color: '#e3f2fd',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: px(0.4),
-                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
-                        lineHeight: 1.1,
-                    }}>
+                    <div
+                        style={{
+                            fontSize: px(7),
+                            color: '#e3f2fd',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: px(0.4),
+                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
+                            lineHeight: 1.1,
+                        }}
+                    >
                         ACCOUNTANT II
                     </div>
                 </div>
 
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    textAlign: 'center',
-                }}>
-                    <div style={{
-                        fontSize: px(6.5),
-                        color: '#ffffff',
-                        fontWeight: 800,
-                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
-                        lineHeight: 1.1,
-                        marginBottom: px(2),
-                    }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100%',
+                        textAlign: 'center',
+                    }}
+                >
+                    <div
+                        style={{
+                            fontSize: px(6.5),
+                            color: '#ffffff',
+                            fontWeight: 800,
+                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
+                            lineHeight: 1.1,
+                            marginBottom: px(2),
+                        }}
+                    >
                         Maria Teresa L. Samonte, Ed.D.
                     </div>
-                    <div style={{
-                        fontSize: px(6.2),
-                        color: '#e3f2fd',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: px(0.1),
-                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
-                        lineHeight: 1.1,
-                    }}>
+                    <div
+                        style={{
+                            fontSize: px(6.2),
+                            color: '#e3f2fd',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: px(0.1),
+                            textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
+                            lineHeight: 1.1,
+                        }}
+                    >
                         CHIEF ADMINISTRATIVE OFFICER
                     </div>
                 </div>
@@ -448,15 +446,37 @@ const BulkSticker = ({ propertyData, scale = 1 }: { propertyData: PropertyData; 
     );
 };
 
-// Bulk print layout component
-const BulkPrintLayout = ({ properties }: { properties: PropertyData[] }) => {
-    const stickersPerPage = 8; // 2 columns × 4 rows for A4
-    const pages: PropertyData[][] = [];
+/* ------------------------------------------------------------------ */
+/* Bulk Print grid with real inner margins + auto scaling              */
+/* ------------------------------------------------------------------ */
+const A4 = { w: 210, h: 297 }; // mm
+const PAGE_PADDING_MM = 10; // white margin all around
+const GAP_MM = 2; // spacing between stickers
+const COLS = 2;
+const ROWS = 4;
+const STICKER_BASE_MM = { w: 101.6, h: 63.5 }; // 4in x 2.5in
 
-    // Group properties into pages
+const BulkPrintLayout = ({ properties }: { properties: PropertyData[] }) => {
+    const stickersPerPage = COLS * ROWS;
+    const pages: PropertyData[][] = [];
     for (let i = 0; i < properties.length; i += stickersPerPage) {
         pages.push(properties.slice(i, i + stickersPerPage));
     }
+
+    // inner usable area after margins
+    const innerW = A4.w - 2 * PAGE_PADDING_MM;
+    const innerH = A4.h - 2 * PAGE_PADDING_MM;
+
+    // per-cell space
+    const availW = innerW - GAP_MM * (COLS - 1);
+    const availH = innerH - GAP_MM * (ROWS - 1);
+    const cellW = availW / COLS;
+    const cellH = availH / ROWS;
+
+    // scale so sticker fits in cell (never upscale > 1)
+    const scaleW = cellW / STICKER_BASE_MM.w;
+    const scaleH = cellH / STICKER_BASE_MM.h;
+    const stickerScale = Math.min(scaleW, scaleH, 1);
 
     return (
         <div>
@@ -464,28 +484,24 @@ const BulkPrintLayout = ({ properties }: { properties: PropertyData[] }) => {
                 <div
                     key={pageIndex}
                     style={{
-                        width: '210mm', // A4 width
-                        minHeight: '297mm', // A4 height
-                        padding: '5mm',
+                        width: `${A4.w}mm`,
+                        minHeight: `${A4.h}mm`,
+                        margin: '0 auto',
+                        // We create white margins by shrinking the grid area and padding it
+                        padding: `${PAGE_PADDING_MM}mm`,
                         boxSizing: 'border-box',
                         display: 'grid',
-                        gridTemplateColumns: '1fr 1fr', // 2 columns
-                        gridTemplateRows: 'repeat(4, 1fr)', // 4 rows
-                        gap: '2mm',
+                        gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+                        gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
+                        gap: `${GAP_MM}mm`,
                         pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto',
-                        pageBreakInside: 'avoid',
+                        breakInside: 'avoid',
+                        background: '#ffffff',
                     }}
                 >
                     {pageProperties.map((property) => (
-                        <div
-                            key={property.id}
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <BulkSticker propertyData={property} scale={1} />
+                        <div key={property.id} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <BulkSticker propertyData={property} scale={stickerScale} />
                         </div>
                     ))}
                 </div>
@@ -494,12 +510,15 @@ const BulkPrintLayout = ({ properties }: { properties: PropertyData[] }) => {
     );
 };
 
+/* ------------------------------------------------------------------ */
+/* Modal/print wrapper (auto-open + toasts preserved)                  */
+/* ------------------------------------------------------------------ */
 export default function BulkPrintModal({
     open,
     onOpenChange,
     selectedProperties,
-    onRemoveProperty,
-    onClearAll
+    onRemoveProperty, // not used here but kept to match your props
+    onClearAll,
 }: BulkPrintModalProps) {
     const printRef = useRef<HTMLDivElement>(null);
 
@@ -507,21 +526,13 @@ export default function BulkPrintModal({
         contentRef: printRef,
         documentTitle: `Bulk Property Stickers - ${selectedProperties.length} items`,
         pageStyle: `
-            @page {
-                margin: 0;
-                size: A4;
-            }
-            @media print {
-                body {
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                    margin: 0;
-                }
-                * {
-                    page-break-inside: avoid;
-                }
-            }
-        `,
+      @page { size: A4; margin: 0; }
+      @media print {
+        html, body { margin: 0 !important; background: #fff; }
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        * { box-sizing: border-box; break-inside: avoid; page-break-inside: avoid; }
+      }
+    `,
         onAfterPrint: () => {
             toast.success(`${selectedProperties.length} stickers sent to printer`);
             onOpenChange(false);
@@ -530,20 +541,20 @@ export default function BulkPrintModal({
         onPrintError: () => {
             toast.error('Print canceled or failed');
             onOpenChange(false);
-        }
+        },
     });
 
-    // Trigger print immediately when modal opens
     useEffect(() => {
         if (open && selectedProperties.length > 0) {
             handlePrint();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     return (
         <>
             {/* Hidden print content */}
-            <div className="fixed -left-[10000px] top-0 pointer-events-none" aria-hidden="true">
+            <div className="pointer-events-none fixed top-0 -left-[10000px]" aria-hidden="true">
                 <div ref={printRef}>
                     <BulkPrintLayout properties={selectedProperties} />
                 </div>
