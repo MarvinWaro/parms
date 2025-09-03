@@ -23,8 +23,8 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, usePage, router } from '@inertiajs/react';
-import { Package, Plus, Search, Printer, X } from 'lucide-react';
-import { FormEvent, useState, useMemo, useEffect, useRef } from 'react';
+import { Package, Plus, Search, Printer, X, Eye, Info } from 'lucide-react';
+import { FormEvent, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
@@ -94,6 +94,15 @@ type PageProps = {
         search?: string;
     };
     totalCount?: number;
+    userRole?: string;
+    auth: {
+        user: {
+            id: number;
+            name: string;
+            email: string;
+            role: string;
+        };
+    };
 };
 
 const initialForm = {
@@ -125,7 +134,11 @@ declare global {
 
 export default function PropertyIndex() {
     const { props } = usePage<PageProps>();
-    const { properties, locations, users, conditions, funds, filters, totalCount } = props;
+    const { properties, locations, users, conditions, funds, filters, totalCount, auth } = props;
+
+    // Check if current user is admin or staff
+    const isAdmin = auth.user.role === 'admin';
+    const isStaff = auth.user.role === 'staff';
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [openCreate, setOpenCreate] = useState(false);
@@ -145,7 +158,7 @@ export default function PropertyIndex() {
         clearErrors?.();
     };
 
-    // Get all properties for selection (you might want to fetch these separately for large datasets)
+    // Get all properties for selection
     const allProperties = properties.data;
 
     // Handle search with debounce
@@ -171,31 +184,26 @@ export default function PropertyIndex() {
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery]);
 
-    // Fetch all properties when selecting all pages - Simplified approach
+    // Fetch all properties when selecting all pages
     const fetchAllProperties = async () => {
         setLoadingBulkData(true);
         try {
-            // First, try using window.axios if available
             let response;
             const url = route('properties.bulk-data');
             const params = { search: searchQuery || '' };
 
             if (typeof window !== 'undefined' && window.axios) {
-                // Use the pre-configured axios instance
                 response = await window.axios.get(url, { params });
             } else if (typeof axios !== 'undefined') {
-                // Use imported axios
                 response = await axios.get(url, { params });
             } else {
-                // Fallback to using Inertia router visit with a custom handler
                 return new Promise((resolve, reject) => {
                     router.visit(url + '?' + new URLSearchParams(params), {
                         method: 'get',
                         preserveState: true,
                         preserveScroll: true,
-                        only: [], // Don't update any page components
+                        only: [],
                         onSuccess: (page: any) => {
-                            // This won't work as expected, so we'll use a different approach
                             reject('Use axios instead');
                         },
                         onError: () => {
@@ -212,8 +220,6 @@ export default function PropertyIndex() {
         } catch (error: any) {
             console.error('Failed to fetch bulk properties:', error);
 
-            // If all methods fail, use a workaround: manually paginate through all pages
-            // This is a fallback solution
             try {
                 await fetchAllPropertiesAlternative();
             } catch (altError) {
@@ -228,8 +234,6 @@ export default function PropertyIndex() {
 
     // Alternative method: Use the data we already have for current search
     const fetchAllPropertiesAlternative = async () => {
-        // Since we know the total count, we can estimate all properties
-        // For now, we'll just use what we have and inform the user
         const currentPageProperties = allProperties.map(property => ({
             id: property.id,
             item_name: property.item_name,
@@ -239,26 +243,21 @@ export default function PropertyIndex() {
             user: users.find(u => u.id === property.user_id)?.name
         }));
 
-        // This is a temporary solution - we'll only print current page items
-        // but show total count to user
         toast.info(`Note: Printing all ${totalCount || properties.total} items. Processing...`);
         setBulkProperties(currentPageProperties);
         setLoadingBulkData(false);
 
-        // Actually fetch all pages data using multiple requests if needed
         if (properties.last_page > 1) {
             const allPagesData: any[] = [...currentPageProperties];
 
             for (let page = 1; page <= properties.last_page; page++) {
                 if (page !== properties.current_page) {
                     try {
-                        // Make a synchronous-like request for each page
                         const pageUrl = route('properties.index') + '?' + new URLSearchParams({
                             page: page.toString(),
                             search: searchQuery || ''
                         });
 
-                        // Use XMLHttpRequest as a fallback
                         const pageData = await fetchPageData(pageUrl);
                         allPagesData.push(...pageData);
                     } catch (err) {
@@ -309,11 +308,9 @@ export default function PropertyIndex() {
     // Get selected properties data for bulk operations
     const getSelectedPropertiesForPrint = async () => {
         if (selectAllPages) {
-            // Fetch all properties if selecting all pages
             const allData = await fetchAllProperties();
             return allData;
         } else {
-            // Return only selected items from current page
             return allProperties.filter(property => selectedPropertyIds.has(property.id))
                 .map(property => ({
                     id: property.id,
@@ -329,7 +326,6 @@ export default function PropertyIndex() {
     // Selection handlers
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            // Select all on current page
             setSelectedPropertyIds(new Set(allProperties.map(row => row.id)));
             setSelectAllPages(false);
         } else {
@@ -349,7 +345,7 @@ export default function PropertyIndex() {
             newSelection.add(propertyId);
         } else {
             newSelection.delete(propertyId);
-            setSelectAllPages(false); // Deselect all pages if individual item is deselected
+            setSelectAllPages(false);
         }
         setSelectedPropertyIds(newSelection);
     };
@@ -370,7 +366,6 @@ export default function PropertyIndex() {
     // Check if all current page rows are selected
     const allPageSelected = allProperties.length > 0 &&
         allProperties.every(row => selectedPropertyIds.has(row.id));
-    const somePageSelected = allProperties.some(row => selectedPropertyIds.has(row.id));
 
     // Handle bulk print
     const handleBulkPrint = async () => {
@@ -422,15 +417,6 @@ export default function PropertyIndex() {
         });
     };
 
-    const handleOpenChange = (open: boolean) => {
-        setOpenCreate(open);
-        if (open) {
-            clearForm();
-        } else {
-            reset();
-        }
-    };
-
     // Pagination handlers
     const handlePageChange = (page: number) => {
         router.get(
@@ -450,29 +436,25 @@ export default function PropertyIndex() {
     // Generate page numbers for pagination
     const generatePageNumbers = () => {
         const pages = [];
-        const maxVisible = 5; // Maximum number of page buttons to show
+        const maxVisible = 5;
         const halfVisible = Math.floor(maxVisible / 2);
 
         let startPage = Math.max(1, properties.current_page - halfVisible);
         let endPage = Math.min(properties.last_page, startPage + maxVisible - 1);
 
-        // Adjust start if we're near the end
         if (endPage - startPage < maxVisible - 1) {
             startPage = Math.max(1, endPage - maxVisible + 1);
         }
 
-        // Add first page and ellipsis if needed
         if (startPage > 1) {
             pages.push(1);
             if (startPage > 2) pages.push('ellipsis-start');
         }
 
-        // Add visible page numbers
         for (let i = startPage; i <= endPage; i++) {
             pages.push(i);
         }
 
-        // Add last page and ellipsis if needed
         if (endPage < properties.last_page) {
             if (endPage < properties.last_page - 1) pages.push('ellipsis-end');
             pages.push(properties.last_page);
@@ -491,361 +473,396 @@ export default function PropertyIndex() {
                     <div className="space-y-2 px-6 pt-6">
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                                <h5 className="text-xl font-bold tracking-tight text-foreground">Properties and Assets</h5>
-                                <p className="text-sm text-muted-foreground">Manage your organization's properties and assets</p>
+                                <h5 className="text-xl font-bold tracking-tight text-foreground">
+                                    {isStaff ? 'My Properties' : 'Properties and Assets'}
+                                </h5>
+                                <p className="text-sm text-muted-foreground">
+                                    {isStaff
+                                        ? 'View properties assigned to your care'
+                                        : 'Manage your organization\'s properties and assets'
+                                    }
+                                </p>
                             </div>
 
-                            {/* Create modal - same as before */}
-                            <Dialog
-                                open={openCreate}
-                                onOpenChange={(v) => {
-                                    if (!v) clearForm();
-                                    setOpenCreate(v);
-                                }}
-                            >
-                                <DialogTrigger asChild>
-                                    <Button size="default" className="shadow-sm">
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Property
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-                                    <DialogHeader>
-                                        <DialogTitle className="flex items-center gap-2">
-                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                                                <Package className="h-4 w-4 text-primary" />
-                                            </div>
-                                            Add New Property
-                                        </DialogTitle>
-                                        <DialogDescription>Fill in the details below to add a new property to your inventory.</DialogDescription>
-                                    </DialogHeader>
+                            {/* Show staff info badge */}
+                            {isStaff && (
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="px-3 py-1.5">
+                                        <Eye className="mr-1 h-3 w-3" />
+                                        View Only
+                                    </Badge>
+                                </div>
+                            )}
 
-                                    <form onSubmit={handleSubmit}>
-                                        <div className="grid gap-4 py-4">
-                                            {/* Form fields remain the same */}
-                                            {/* Row 1 */}
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            {/* Create modal - Only show for admin users */}
+                            {isAdmin && (
+                                <Dialog
+                                    open={openCreate}
+                                    onOpenChange={(v) => {
+                                        if (!v) clearForm();
+                                        setOpenCreate(v);
+                                    }}
+                                >
+                                    <DialogTrigger asChild>
+                                        <Button size="default" className="shadow-sm">
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Add Property
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+                                        <DialogHeader>
+                                            <DialogTitle className="flex items-center gap-2">
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                                                    <Package className="h-4 w-4 text-primary" />
+                                                </div>
+                                                Add New Property
+                                            </DialogTitle>
+                                            <DialogDescription>Fill in the details below to add a new property to your inventory.</DialogDescription>
+                                        </DialogHeader>
+
+                                        <form onSubmit={handleSubmit}>
+                                            <div className="grid gap-4 py-4">
+                                                {/* Form fields - Row 1 */}
+                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="item_name">
+                                                            Item Name <span className="text-red-500">*</span>
+                                                        </Label>
+                                                        <Input
+                                                            id="item_name"
+                                                            name="item_name"
+                                                            placeholder="e.g., Dell Latitude 5440"
+                                                            value={data.item_name}
+                                                            onChange={(e) => setData('item_name', e.target.value)}
+                                                            className={errors.item_name ? 'border-red-500' : ''}
+                                                            disabled={processing}
+                                                        />
+                                                        {errors.item_name && <p className="text-sm text-red-500">{errors.item_name}</p>}
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="property_number">Property Number</Label>
+                                                        <Input
+                                                            id="property_number"
+                                                            name="property_number"
+                                                            placeholder="Auto-generated if empty"
+                                                            value={data.property_number}
+                                                            onChange={(e) => setData('property_number', e.target.value)}
+                                                            className={errors.property_number ? 'border-red-500' : ''}
+                                                            disabled={processing}
+                                                        />
+                                                        {errors.property_number && <p className="text-sm text-red-500">{errors.property_number}</p>}
+                                                    </div>
+                                                </div>
+
+                                                {/* Row 2 */}
+                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="serial_no">Serial No</Label>
+                                                        <Input
+                                                            id="serial_no"
+                                                            name="serial_no"
+                                                            placeholder="e.g., ABC123456"
+                                                            value={data.serial_no}
+                                                            onChange={(e) => setData('serial_no', e.target.value)}
+                                                            className={errors.serial_no ? 'border-red-500' : ''}
+                                                            disabled={processing}
+                                                        />
+                                                        {errors.serial_no && <p className="text-sm text-red-500">{errors.serial_no}</p>}
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="model_no">Model No</Label>
+                                                        <Input
+                                                            id="model_no"
+                                                            name="model_no"
+                                                            placeholder="e.g., Latitude 5440"
+                                                            value={data.model_no}
+                                                            onChange={(e) => setData('model_no', e.target.value)}
+                                                            className={errors.model_no ? 'border-red-500' : ''}
+                                                            disabled={processing}
+                                                        />
+                                                        {errors.model_no && <p className="text-sm text-red-500">{errors.model_no}</p>}
+                                                    </div>
+                                                </div>
+
+                                                {/* Row 3 */}
+                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="acquisition_date">Acquisition Date</Label>
+                                                        <Input
+                                                            id="acquisition_date"
+                                                            name="acquisition_date"
+                                                            type="date"
+                                                            value={data.acquisition_date}
+                                                            onChange={(e) => setData('acquisition_date', e.target.value)}
+                                                            className={errors.acquisition_date ? 'border-red-500' : ''}
+                                                            disabled={processing}
+                                                        />
+                                                        {errors.acquisition_date && <p className="text-sm text-red-500">{errors.acquisition_date}</p>}
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="acquisition_cost">Acquisition Cost</Label>
+                                                        <Input
+                                                            id="acquisition_cost"
+                                                            name="acquisition_cost"
+                                                            type="number"
+                                                            step="0.01"
+                                                            placeholder="0.00"
+                                                            value={data.acquisition_cost}
+                                                            onChange={(e) => setData('acquisition_cost', e.target.value)}
+                                                            className={errors.acquisition_cost ? 'border-red-500' : ''}
+                                                            disabled={processing}
+                                                        />
+                                                        {errors.acquisition_cost && <p className="text-sm text-red-500">{errors.acquisition_cost}</p>}
+                                                    </div>
+                                                </div>
+
+                                                {/* Row 4 */}
+                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="unit_of_measure">Unit of Measure</Label>
+                                                        <Input
+                                                            id="unit_of_measure"
+                                                            name="unit_of_measure"
+                                                            placeholder="e.g., pcs, unit, box"
+                                                            value={data.unit_of_measure}
+                                                            onChange={(e) => setData('unit_of_measure', e.target.value)}
+                                                            className={errors.unit_of_measure ? 'border-red-500' : ''}
+                                                            disabled={processing}
+                                                        />
+                                                        {errors.unit_of_measure && <p className="text-sm text-red-500">{errors.unit_of_measure}</p>}
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="quantity_per_physical_count">Quantity (Per Physical Count)</Label>
+                                                        <Input
+                                                            id="quantity_per_physical_count"
+                                                            name="quantity_per_physical_count"
+                                                            type="number"
+                                                            min="1"
+                                                            value={data.quantity_per_physical_count}
+                                                            onChange={(e) => setData('quantity_per_physical_count', e.target.value)}
+                                                            className={errors.quantity_per_physical_count ? 'border-red-500' : ''}
+                                                            disabled={processing}
+                                                        />
+                                                        {errors.quantity_per_physical_count && (
+                                                            <p className="text-sm text-red-500">{errors.quantity_per_physical_count}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Row 5: Fund + User */}
+                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="fund">Fund</Label>
+                                                        <Select
+                                                            name="fund"
+                                                            value={data.fund}
+                                                            onValueChange={(v) => setData('fund', v)}
+                                                            disabled={processing}
+                                                        >
+                                                            <SelectTrigger id="fund" className={`w-full ${errors.fund ? 'border-red-500' : ''}`}>
+                                                                <SelectValue placeholder="Select fund" />
+                                                            </SelectTrigger>
+                                                            <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
+                                                                {funds.map((f) => (
+                                                                    <SelectItem key={f.value} value={f.value} className="leading-5 whitespace-normal">
+                                                                        {f.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {errors.fund && <p className="text-sm text-red-500">{errors.fund}</p>}
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="user_id">
+                                                            User <span className="text-red-500">*</span>
+                                                        </Label>
+                                                        <Select
+                                                            name="user_id"
+                                                            value={data.user_id || ''}
+                                                            onValueChange={(v) => setData('user_id', v)}
+                                                            disabled={processing}
+                                                        >
+                                                            <SelectTrigger id="user_id" className={`w-full ${errors.user_id ? 'border-red-500' : ''}`}>
+                                                                <SelectValue placeholder="Select user" />
+                                                            </SelectTrigger>
+                                                            <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
+                                                                {users.map((u) => (
+                                                                    <SelectItem key={u.id} value={String(u.id)} className="leading-5 whitespace-normal">
+                                                                        {u.name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {errors.user_id && <p className="text-sm text-red-500">{errors.user_id}</p>}
+                                                    </div>
+                                                </div>
+
+                                                {/* Row 6: Location */}
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="item_name">
-                                                        Item Name <span className="text-red-500">*</span>
+                                                    <Label htmlFor="location_id">
+                                                        Location / Whereabouts <span className="text-red-500">*</span>
                                                     </Label>
-                                                    <Input
-                                                        id="item_name"
-                                                        name="item_name"
-                                                        placeholder="e.g., Dell Latitude 5440"
-                                                        value={data.item_name}
-                                                        onChange={(e) => setData('item_name', e.target.value)}
-                                                        className={errors.item_name ? 'border-red-500' : ''}
-                                                        disabled={processing}
-                                                    />
-                                                    {errors.item_name && <p className="text-sm text-red-500">{errors.item_name}</p>}
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="property_number">Property Number</Label>
-                                                    <Input
-                                                        id="property_number"
-                                                        name="property_number"
-                                                        placeholder="Auto-generated if empty"
-                                                        value={data.property_number}
-                                                        onChange={(e) => setData('property_number', e.target.value)}
-                                                        className={errors.property_number ? 'border-red-500' : ''}
-                                                        disabled={processing}
-                                                    />
-                                                    {errors.property_number && <p className="text-sm text-red-500">{errors.property_number}</p>}
-                                                </div>
-                                            </div>
-
-                                            {/* Row 2 */}
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="serial_no">Serial No</Label>
-                                                    <Input
-                                                        id="serial_no"
-                                                        name="serial_no"
-                                                        placeholder="e.g., ABC123456"
-                                                        value={data.serial_no}
-                                                        onChange={(e) => setData('serial_no', e.target.value)}
-                                                        className={errors.serial_no ? 'border-red-500' : ''}
-                                                        disabled={processing}
-                                                    />
-                                                    {errors.serial_no && <p className="text-sm text-red-500">{errors.serial_no}</p>}
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="model_no">Model No</Label>
-                                                    <Input
-                                                        id="model_no"
-                                                        name="model_no"
-                                                        placeholder="e.g., Latitude 5440"
-                                                        value={data.model_no}
-                                                        onChange={(e) => setData('model_no', e.target.value)}
-                                                        className={errors.model_no ? 'border-red-500' : ''}
-                                                        disabled={processing}
-                                                    />
-                                                    {errors.model_no && <p className="text-sm text-red-500">{errors.model_no}</p>}
-                                                </div>
-                                            </div>
-
-                                            {/* Row 3 */}
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="acquisition_date">Acquisition Date</Label>
-                                                    <Input
-                                                        id="acquisition_date"
-                                                        name="acquisition_date"
-                                                        type="date"
-                                                        value={data.acquisition_date}
-                                                        onChange={(e) => setData('acquisition_date', e.target.value)}
-                                                        className={errors.acquisition_date ? 'border-red-500' : ''}
-                                                        disabled={processing}
-                                                    />
-                                                    {errors.acquisition_date && <p className="text-sm text-red-500">{errors.acquisition_date}</p>}
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="acquisition_cost">Acquisition Cost</Label>
-                                                    <Input
-                                                        id="acquisition_cost"
-                                                        name="acquisition_cost"
-                                                        type="number"
-                                                        step="0.01"
-                                                        placeholder="0.00"
-                                                        value={data.acquisition_cost}
-                                                        onChange={(e) => setData('acquisition_cost', e.target.value)}
-                                                        className={errors.acquisition_cost ? 'border-red-500' : ''}
-                                                        disabled={processing}
-                                                    />
-                                                    {errors.acquisition_cost && <p className="text-sm text-red-500">{errors.acquisition_cost}</p>}
-                                                </div>
-                                            </div>
-
-                                            {/* Row 4 */}
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="unit_of_measure">Unit of Measure</Label>
-                                                    <Input
-                                                        id="unit_of_measure"
-                                                        name="unit_of_measure"
-                                                        placeholder="e.g., pcs, unit, box"
-                                                        value={data.unit_of_measure}
-                                                        onChange={(e) => setData('unit_of_measure', e.target.value)}
-                                                        className={errors.unit_of_measure ? 'border-red-500' : ''}
-                                                        disabled={processing}
-                                                    />
-                                                    {errors.unit_of_measure && <p className="text-sm text-red-500">{errors.unit_of_measure}</p>}
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="quantity_per_physical_count">Quantity (Per Physical Count)</Label>
-                                                    <Input
-                                                        id="quantity_per_physical_count"
-                                                        name="quantity_per_physical_count"
-                                                        type="number"
-                                                        min="1"
-                                                        value={data.quantity_per_physical_count}
-                                                        onChange={(e) => setData('quantity_per_physical_count', e.target.value)}
-                                                        className={errors.quantity_per_physical_count ? 'border-red-500' : ''}
-                                                        disabled={processing}
-                                                    />
-                                                    {errors.quantity_per_physical_count && (
-                                                        <p className="text-sm text-red-500">{errors.quantity_per_physical_count}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Row 5: Fund + User */}
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                                {/* Fund */}
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="fund">Fund</Label>
                                                     <Select
-                                                        name="fund"
-                                                        value={data.fund}
-                                                        onValueChange={(v) => setData('fund', v)}
+                                                        name="location_id"
+                                                        value={data.location_id || ''}
+                                                        onValueChange={(v) => setData('location_id', v)}
                                                         disabled={processing}
                                                     >
-                                                        <SelectTrigger id="fund" className={`w-full ${errors.fund ? 'border-red-500' : ''}`}>
-                                                            <SelectValue placeholder="Select fund" />
+                                                        <SelectTrigger
+                                                            id="location_id"
+                                                            className={`w-full ${errors.location_id ? 'border-red-500' : ''}`}
+                                                        >
+                                                            <SelectValue placeholder="Select location" />
                                                         </SelectTrigger>
                                                         <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
-                                                            {funds.map((f) => (
-                                                                <SelectItem key={f.value} value={f.value} className="leading-5 whitespace-normal">
-                                                                    {f.label}
+                                                            {locations.map((loc) => (
+                                                                <SelectItem key={loc.id} value={String(loc.id)} className="leading-5 whitespace-normal">
+                                                                    {loc.name}
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
-                                                    {errors.fund && <p className="text-sm text-red-500">{errors.fund}</p>}
+                                                    {errors.location_id && <p className="text-sm text-red-500">{errors.location_id}</p>}
                                                 </div>
 
-                                                {/* User */}
+                                                {/* Row 7: Condition */}
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="user_id">
-                                                        User <span className="text-red-500">*</span>
+                                                    <Label htmlFor="condition_id">
+                                                        Condition <span className="text-red-500">*</span>
                                                     </Label>
                                                     <Select
-                                                        name="user_id"
-                                                        value={data.user_id || ''}
-                                                        onValueChange={(v) => setData('user_id', v)}
+                                                        name="condition_id"
+                                                        value={data.condition_id || ''}
+                                                        onValueChange={(v) => setData('condition_id', v)}
                                                         disabled={processing}
                                                     >
-                                                        <SelectTrigger id="user_id" className={`w-full ${errors.user_id ? 'border-red-500' : ''}`}>
-                                                            <SelectValue placeholder="Select user" />
+                                                        <SelectTrigger
+                                                            id="condition_id"
+                                                            className={`w-full ${errors.condition_id ? 'border-red-500' : ''}`}
+                                                        >
+                                                            <SelectValue placeholder="Select condition" />
                                                         </SelectTrigger>
                                                         <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
-                                                            {users.map((u) => (
-                                                                <SelectItem key={u.id} value={String(u.id)} className="leading-5 whitespace-normal">
-                                                                    {u.name}
+                                                            {conditions.map((c) => (
+                                                                <SelectItem key={c.id} value={String(c.id)} className="leading-5 whitespace-normal">
+                                                                    {c.name}
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
-                                                    {errors.user_id && <p className="text-sm text-red-500">{errors.user_id}</p>}
+                                                    {errors.condition_id && <p className="text-sm text-red-500">{errors.condition_id}</p>}
                                                 </div>
-                                            </div>
 
-                                            {/* Row 6: Location (full width) */}
-                                            <div className="space-y-2">
-                                                <Label htmlFor="location_id">
-                                                    Location / Whereabouts <span className="text-red-500">*</span>
-                                                </Label>
-                                                <Select
-                                                    name="location_id"
-                                                    value={data.location_id || ''}
-                                                    onValueChange={(v) => setData('location_id', v)}
-                                                    disabled={processing}
-                                                >
-                                                    <SelectTrigger
-                                                        id="location_id"
-                                                        className={`w-full ${errors.location_id ? 'border-red-500' : ''}`}
-                                                    >
-                                                        <SelectValue placeholder="Select location" />
-                                                    </SelectTrigger>
-                                                    <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
-                                                        {locations.map((loc) => (
-                                                            <SelectItem key={loc.id} value={String(loc.id)} className="leading-5 whitespace-normal">
-                                                                {loc.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                {errors.location_id && <p className="text-sm text-red-500">{errors.location_id}</p>}
-                                            </div>
-
-                                            {/* Row 7: Condition (full width) */}
-                                            <div className="space-y-2">
-                                                <Label htmlFor="condition_id">
-                                                    Condition <span className="text-red-500">*</span>
-                                                </Label>
-                                                <Select
-                                                    name="condition_id"
-                                                    value={data.condition_id || ''}
-                                                    onValueChange={(v) => setData('condition_id', v)}
-                                                    disabled={processing}
-                                                >
-                                                    <SelectTrigger
-                                                        id="condition_id"
-                                                        className={`w-full ${errors.condition_id ? 'border-red-500' : ''}`}
-                                                    >
-                                                        <SelectValue placeholder="Select condition" />
-                                                    </SelectTrigger>
-                                                    <SelectContent position="popper" className="max-h-60 w-[--radix-select-trigger-width]">
-                                                        {conditions.map((c) => (
-                                                            <SelectItem key={c.id} value={String(c.id)} className="leading-5 whitespace-normal">
-                                                                {c.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                {errors.condition_id && <p className="text-sm text-red-500">{errors.condition_id}</p>}
-                                            </div>
-
-                                            {/* Description */}
-                                            <div className="space-y-2">
-                                                <Label htmlFor="item_description">Item Description</Label>
-                                                <Textarea
-                                                    id="item_description"
-                                                    name="item_description"
-                                                    placeholder="Detailed description of the item..."
-                                                    value={data.item_description}
-                                                    onChange={(e) => setData('item_description', e.target.value)}
-                                                    className={errors.item_description ? 'border-red-500' : ''}
-                                                    rows={3}
-                                                    disabled={processing}
-                                                />
-                                                {errors.item_description && <p className="text-sm text-red-500">{errors.item_description}</p>}
-                                            </div>
-
-                                            {/* Remarks + Color */}
-                                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                {/* Description */}
                                                 <div className="space-y-2">
-                                                    <Label htmlFor="remarks">Remarks</Label>
+                                                    <Label htmlFor="item_description">Item Description</Label>
                                                     <Textarea
-                                                        id="remarks"
-                                                        name="remarks"
-                                                        placeholder="Additional remarks or notes..."
-                                                        value={data.remarks}
-                                                        onChange={(e) => setData('remarks', e.target.value)}
-                                                        className={errors.remarks ? 'border-red-500' : ''}
+                                                        id="item_description"
+                                                        name="item_description"
+                                                        placeholder="Detailed description of the item..."
+                                                        value={data.item_description}
+                                                        onChange={(e) => setData('item_description', e.target.value)}
+                                                        className={errors.item_description ? 'border-red-500' : ''}
                                                         rows={3}
                                                         disabled={processing}
                                                     />
-                                                    {errors.remarks && <p className="text-sm text-red-500">{errors.remarks}</p>}
+                                                    {errors.item_description && <p className="text-sm text-red-500">{errors.item_description}</p>}
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="color">Color</Label>
-                                                    <div className="flex items-center gap-2">
-                                                        <Input
-                                                            id="color"
-                                                            name="color"
-                                                            type="color"
-                                                            value={data.color}
-                                                            onChange={(e) => setData('color', e.target.value)}
-                                                            className={`h-10 w-16 p-1 ${errors.color ? 'border-red-500' : ''}`}
+
+                                                {/* Remarks + Color */}
+                                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="remarks">Remarks</Label>
+                                                        <Textarea
+                                                            id="remarks"
+                                                            name="remarks"
+                                                            placeholder="Additional remarks or notes..."
+                                                            value={data.remarks}
+                                                            onChange={(e) => setData('remarks', e.target.value)}
+                                                            className={errors.remarks ? 'border-red-500' : ''}
+                                                            rows={3}
                                                             disabled={processing}
                                                         />
-                                                        <Input
-                                                            id="color_text"
-                                                            name="color_text"
-                                                            placeholder="#000000"
-                                                            value={data.color}
-                                                            onChange={(e) => setData('color', e.target.value)}
-                                                            className={`flex-1 ${errors.color ? 'border-red-500' : ''}`}
-                                                            disabled={processing}
-                                                        />
+                                                        {errors.remarks && <p className="text-sm text-red-500">{errors.remarks}</p>}
                                                     </div>
-                                                    {errors.color && <p className="text-sm text-red-500">{errors.color}</p>}
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="color">Color</Label>
+                                                        <div className="flex items-center gap-2">
+                                                            <Input
+                                                                id="color"
+                                                                name="color"
+                                                                type="color"
+                                                                value={data.color}
+                                                                onChange={(e) => setData('color', e.target.value)}
+                                                                className={`h-10 w-16 p-1 ${errors.color ? 'border-red-500' : ''}`}
+                                                                disabled={processing}
+                                                            />
+                                                            <Input
+                                                                id="color_text"
+                                                                name="color_text"
+                                                                placeholder="#000000"
+                                                                value={data.color}
+                                                                onChange={(e) => setData('color', e.target.value)}
+                                                                className={`flex-1 ${errors.color ? 'border-red-500' : ''}`}
+                                                                disabled={processing}
+                                                            />
+                                                        </div>
+                                                        {errors.color && <p className="text-sm text-red-500">{errors.color}</p>}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <DialogFooter className="gap-2 pt-4">
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    clearForm();
-                                                    setOpenCreate(false);
-                                                }}
-                                                disabled={processing}
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button
-                                                type="submit"
-                                                disabled={processing || !data.item_name || !data.location_id || !data.user_id || !data.condition_id}
-                                            >
-                                                {processing ? 'Creating...' : 'Create Property'}
-                                            </Button>
-                                        </DialogFooter>
-                                    </form>
-                                </DialogContent>
-                            </Dialog>
+                                            <DialogFooter className="gap-2 pt-4">
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        clearForm();
+                                                        setOpenCreate(false);
+                                                    }}
+                                                    disabled={processing}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    type="submit"
+                                                    disabled={processing || !data.item_name || !data.location_id || !data.user_id || !data.condition_id}
+                                                >
+                                                    {processing ? 'Creating...' : 'Create Property'}
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
                         </div>
                     </div>
+
+                    {/* Staff Info Section */}
+                    {isStaff && (
+                        <div className="mx-6">
+                            <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                <Info className="h-5 w-5 text-blue-600" />
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-blue-900">
+                                        You are viewing properties assigned to your care
+                                    </p>
+                                    <p className="text-xs text-blue-700">
+                                        You can view details and print QR codes, but cannot modify properties.
+                                        Contact your administrator for changes.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Stats, Search, and Bulk Actions Section */}
                     <div className="flex flex-col gap-4 px-6 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                             <Badge variant="secondary" className="px-3 py-1.5 text-sm font-medium">
                                 {totalCount || properties.total} {(totalCount || properties.total) === 1 ? 'Property' : 'Properties'}
+                                {isStaff && ' assigned to you'}
                             </Badge>
                             {searchQuery && (
                                 <Badge variant="outline" className="px-3 py-1.5 text-sm">
@@ -978,6 +995,7 @@ export default function PropertyIndex() {
                                                 funds={funds}
                                                 isSelected={selectedPropertyIds.has(row.id)}
                                                 onSelectionChange={(checked) => handleSelectProperty(row.id, checked)}
+                                                isReadOnly={isStaff} // ADD THIS LINE
                                             />
                                         ))}
                                     </TableBody>
@@ -1004,14 +1022,21 @@ export default function PropertyIndex() {
                                                 <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
                                                     <Package className="h-8 w-8 text-primary" />
                                                 </div>
-                                                <h3 className="mb-2 text-xl font-semibold text-foreground">No properties yet</h3>
+                                                <h3 className="mb-2 text-xl font-semibold text-foreground">
+                                                    {isStaff ? 'No properties assigned' : 'No properties yet'}
+                                                </h3>
                                                 <p className="mb-8 max-w-md text-center text-sm leading-relaxed text-muted-foreground">
-                                                    Get started by adding your first property to your inventory.
+                                                    {isStaff
+                                                        ? 'No properties have been assigned to your care yet. Contact your administrator.'
+                                                        : 'Get started by adding your first property to your inventory.'
+                                                    }
                                                 </p>
-                                                <Button onClick={() => setOpenCreate(true)}>
-                                                    <Plus className="mr-2 h-4 w-4" />
-                                                    Add Your First Property
-                                                </Button>
+                                                {isAdmin && (
+                                                    <Button onClick={() => setOpenCreate(true)}>
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Add Your First Property
+                                                    </Button>
+                                                )}
                                             </>
                                         )}
                                     </div>

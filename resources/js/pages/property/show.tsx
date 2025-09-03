@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, Calendar, DollarSign, MapPin, Package, Palette, Pencil, Printer, Trash2, User, Wrench } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Calendar, DollarSign, MapPin, Package, Palette, Pencil, Printer, Trash2, User, Wrench, Eye, Info } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -53,15 +53,28 @@ type PageProps = {
     users: DropdownOption[];
     conditions: DropdownOption[];
     funds: FundOption[];
+    userRole?: string;
+    auth: {
+        user: {
+            id: number;
+            name: string;
+            email: string;
+            role: string;
+        };
+    };
 };
 
 const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 2 });
 
 export default function PropertyShow() {
     const { props } = usePage<PageProps>();
-    const { property, locations, users, conditions, funds } = props;
+    const { property, locations, users, conditions, funds, auth } = props;
     const [openDelete, setOpenDelete] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);
+
+    // Check if current user is admin
+    const isAdmin = auth.user.role === 'admin';
+    const isStaff = auth.user.role === 'staff';
 
     const { delete: deleteRequest, processing: deleteProcessing } = useForm();
 
@@ -117,6 +130,13 @@ export default function PropertyShow() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
+                                {/* Show staff read-only badge */}
+                                {isStaff && (
+                                    <Badge variant="secondary" className="px-3 py-1.5">
+                                        <Eye className="mr-1 h-3 w-3" />
+                                        View Only
+                                    </Badge>
+                                )}
                                 <Link href={route('properties.index')}>
                                     <Button variant="outline">
                                         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -126,6 +146,24 @@ export default function PropertyShow() {
                             </div>
                         </div>
                     </div>
+
+                    {/* Staff Info Section */}
+                    {isStaff && (
+                        <div className="px-6">
+                            <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                <Info className="h-5 w-5 text-blue-600" />
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-blue-900">
+                                        This property is assigned to your care
+                                    </p>
+                                    <p className="text-xs text-blue-700">
+                                        You can view all details and print QR codes, but cannot modify property information.
+                                        Contact your administrator for any changes needed.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Content Grid */}
                     <div className="px-6">
@@ -320,66 +358,101 @@ export default function PropertyShow() {
                                     />
                                 )}
 
-                                {/* Quick Actions */}
+                                {/* Quick Actions - Only show for admin users */}
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Quick Actions</CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-2">
-                                        <Button variant="outline" className="w-full justify-start" onClick={() => setOpenEdit(true)}>
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            Edit Property
-                                        </Button>
-
-                                        {/* Delete Popover */}
-                                        <Popover open={openDelete} onOpenChange={setOpenDelete}>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete Property
+                                        {isAdmin ? (
+                                            <>
+                                                {/* Admin Actions */}
+                                                <Button variant="outline" className="w-full justify-start" onClick={() => setOpenEdit(true)}>
+                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                    Edit Property
                                                 </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-80 p-0" align="center" side="bottom">
-                                                <div className="space-y-3 p-4">
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
-                                                            <AlertTriangle className="h-4 w-4 text-destructive" />
-                                                        </div>
-                                                        <div className="flex-1 space-y-1">
-                                                            <h4 className="text-sm font-medium text-foreground">Delete property</h4>
-                                                            <p className="text-xs leading-relaxed text-muted-foreground">
-                                                                Delete "{property.item_name}"? This action cannot be undone and you will be redirected
-                                                                to the properties list.
-                                                            </p>
-                                                        </div>
-                                                    </div>
 
-                                                    <div className="flex items-center gap-2 pt-1">
+                                                {/* Delete Popover */}
+                                                <Popover open={openDelete} onOpenChange={setOpenDelete}>
+                                                    <PopoverTrigger asChild>
                                                         <Button
                                                             variant="outline"
-                                                            size="sm"
-                                                            onClick={() => setOpenDelete(false)}
-                                                            disabled={deleteProcessing}
-                                                            className="h-8 flex-1 text-xs"
+                                                            className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                         >
-                                                            Cancel
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete Property
                                                         </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={handleDeleteConfirm}
-                                                            disabled={deleteProcessing}
-                                                            className="h-8 flex-1 text-xs"
-                                                        >
-                                                            {deleteProcessing ? 'Deleting…' : 'Delete'}
-                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-80 p-0" align="center" side="bottom">
+                                                        <div className="space-y-3 p-4">
+                                                            <div className="flex items-start gap-3">
+                                                                <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                                                                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                                                                </div>
+                                                                <div className="flex-1 space-y-1">
+                                                                    <h4 className="text-sm font-medium text-foreground">Delete property</h4>
+                                                                    <p className="text-xs leading-relaxed text-muted-foreground">
+                                                                        Delete "{property.item_name}"? This action cannot be undone and you will be redirected
+                                                                        to the properties list.
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="flex items-center gap-2 pt-1">
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => setOpenDelete(false)}
+                                                                    disabled={deleteProcessing}
+                                                                    className="h-8 flex-1 text-xs"
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                                <Button
+                                                                    variant="destructive"
+                                                                    size="sm"
+                                                                    onClick={handleDeleteConfirm}
+                                                                    disabled={deleteProcessing}
+                                                                    className="h-8 flex-1 text-xs"
+                                                                >
+                                                                    {deleteProcessing ? 'Deleting…' : 'Delete'}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {/* Staff Actions - View Only */}
+                                                <div className="space-y-3">
+                                                    <div className="text-center py-4">
+                                                        <Eye className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                                                        <p className="text-sm text-muted-foreground">
+                                                            You can view this property but cannot make changes
+                                                        </p>
                                                     </div>
+                                                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
+                                                        <p className="text-xs text-yellow-800">
+                                                            <strong>Need to make changes?</strong><br />
+                                                            Contact your administrator to modify property details, location, or assignment.
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Staff can still print QR codes */}
+                                                    {property.qr_code_url && (
+                                                        <Button
+                                                            variant="outline"
+                                                            className="w-full justify-start"
+                                                            onClick={() => window.open(property.qr_code_url, '_blank')}
+                                                        >
+                                                            <Printer className="mr-2 h-4 w-4" />
+                                                            View QR Code
+                                                        </Button>
+                                                    )}
                                                 </div>
-                                            </PopoverContent>
-                                        </Popover>
+                                            </>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </div>
@@ -388,21 +461,23 @@ export default function PropertyShow() {
                 </div>
             </div>
 
-            {/* Shared Edit Modal */}
-            <EditPropertyModal
-                open={openEdit}
-                onOpenChange={setOpenEdit}
-                property={property}
-                locations={locations}
-                users={users}
-                conditions={conditions}
-                funds={funds}
-                source="show" // Explicitly set source to 'show' for show page edits
-                onSuccess={() => {
-                    // Optional: Add any specific success handling for show page
-                    // The shared modal already handles toast notifications
-                }}
-            />
+            {/* Shared Edit Modal - Only for admin users */}
+            {isAdmin && (
+                <EditPropertyModal
+                    open={openEdit}
+                    onOpenChange={setOpenEdit}
+                    property={property}
+                    locations={locations}
+                    users={users}
+                    conditions={conditions}
+                    funds={funds}
+                    source="show"
+                    onSuccess={() => {
+                        // Optional: Add any specific success handling for show page
+                        // The shared modal already handles toast notifications
+                    }}
+                />
+            )}
         </AppLayout>
     );
 }

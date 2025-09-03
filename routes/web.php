@@ -27,20 +27,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:staff');
 
     // Property routes - accessible to both admin and staff
+    // The PropertyController now automatically filters properties based on user role
+    // Staff users see only properties assigned to them
+    // Admin users see all properties
     Route::get('/property', [PropertyController::class, 'index'])->name('properties.index');
-    Route::get('/property/bulk-data', [PropertyController::class, 'bulkData'])->name('properties.bulk-data'); // Add bulk data route
+    Route::get('/property/bulk-data', [PropertyController::class, 'bulkData'])->name('properties.bulk-data');
     Route::get('/property/{property}', [PropertyController::class, 'show'])->name('properties.show');
 });
 
-// Routes for staff and admin users
-Route::middleware(['auth', 'verified', 'role:staff,admin'])->group(function () {
-    // Property management - staff can create and update
+// Admin-only routes for property management
+Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+    // Property management - admin only
     Route::post('/property', [PropertyController::class, 'store'])->name('properties.store');
     Route::patch('/property/{property}', [PropertyController::class, 'update'])->name('properties.update');
-});
+    Route::delete('/property/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
 
-// Admin-only routes
-Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     // Location management - admin only
     Route::get('/location', [LocationController::class, 'index'])->name('location.index');
     Route::post('/location', [LocationController::class, 'store'])->name('location.store');
@@ -52,9 +53,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::post('/condition', [ConditionController::class, 'store'])->name('condition.store');
     Route::patch('/condition/{condition}', [ConditionController::class, 'update'])->name('condition.update');
     Route::delete('/condition/{condition}', [ConditionController::class, 'destroy'])->name('condition.destroy');
-
-    // Property deletion - admin only
-    Route::delete('/property/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
 
     // User management - admin only
     Route::post('/users', [UserController::class, 'store'])->name('users.store');

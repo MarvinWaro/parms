@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { TableCell, TableRow } from '@/components/ui/table';
-import { useForm } from '@inertiajs/react';
+import { useForm, Link } from '@inertiajs/react';
 import { AlertTriangle, Eye, Package, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -51,6 +51,7 @@ interface PropertyRowTemplateProps {
     funds: FundOption[];
     isSelected: boolean;
     onSelectionChange: (checked: boolean) => void;
+    isReadOnly?: boolean; // Add the isReadOnly prop
 }
 
 const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 2 });
@@ -63,7 +64,8 @@ export default function PropertyRowTemplate({
     conditions,
     funds,
     isSelected,
-    onSelectionChange
+    onSelectionChange,
+    isReadOnly = false // Add with default value
 }: PropertyRowTemplateProps) {
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
@@ -139,6 +141,7 @@ export default function PropertyRowTemplate({
                 </TableCell>
                 <TableCell className="px-6 py-4 text-right align-middle">
                     <div className="flex items-center justify-end gap-1">
+                        {/* Always show View button */}
                         <Button
                             variant="ghost"
                             size="sm"
@@ -148,83 +151,91 @@ export default function PropertyRowTemplate({
                         >
                             <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Edit property"
-                            onClick={() => setOpenEdit(true)}
-                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-muted/60 hover:text-foreground"
-                        >
-                            <Pencil className="h-4 w-4" />
-                        </Button>
 
-                        {/* Delete Popover */}
-                        <Popover open={openDelete} onOpenChange={setOpenDelete}>
-                            <PopoverTrigger asChild>
+                        {/* Only show Edit and Delete buttons for non-readonly users (admins) */}
+                        {!isReadOnly && (
+                            <>
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    title="Delete property"
-                                    className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-destructive/10 hover:text-destructive"
+                                    title="Edit property"
+                                    onClick={() => setOpenEdit(true)}
+                                    className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-muted/60 hover:text-foreground"
                                 >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Pencil className="h-4 w-4" />
                                 </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80 p-0" align="end" side="bottom">
-                                <div className="space-y-3 p-4">
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
-                                            <AlertTriangle className="h-4 w-4 text-destructive" />
-                                        </div>
-                                        <div className="flex-1 space-y-1">
-                                            <h4 className="text-sm font-medium text-foreground">Delete property</h4>
-                                            <p className="text-xs leading-relaxed text-muted-foreground">
-                                                Delete "{row.item_name}"? This action cannot be undone.
-                                            </p>
-                                        </div>
-                                    </div>
 
-                                    <div className="flex items-center gap-2 pt-1">
+                                {/* Delete Popover */}
+                                <Popover open={openDelete} onOpenChange={setOpenDelete}>
+                                    <PopoverTrigger asChild>
                                         <Button
-                                            variant="outline"
+                                            variant="ghost"
                                             size="sm"
-                                            onClick={() => setOpenDelete(false)}
-                                            disabled={processing}
-                                            className="h-8 flex-1 text-xs"
+                                            title="Delete property"
+                                            className="h-9 w-9 p-0 text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-destructive/10 hover:text-destructive"
                                         >
-                                            Cancel
+                                            <Trash2 className="h-4 w-4" />
                                         </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={handleDeleteConfirm}
-                                            disabled={processing}
-                                            className="h-8 flex-1 text-xs"
-                                        >
-                                            {processing ? 'Deleting…' : 'Delete'}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 p-0" align="end" side="bottom">
+                                        <div className="space-y-3 p-4">
+                                            <div className="flex items-start gap-3">
+                                                <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                                                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                                                </div>
+                                                <div className="flex-1 space-y-1">
+                                                    <h4 className="text-sm font-medium text-foreground">Delete property</h4>
+                                                    <p className="text-xs leading-relaxed text-muted-foreground">
+                                                        Delete "{row.item_name}"? This action cannot be undone.
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 pt-1">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => setOpenDelete(false)}
+                                                    disabled={processing}
+                                                    className="h-8 flex-1 text-xs"
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={handleDeleteConfirm}
+                                                    disabled={processing}
+                                                    className="h-8 flex-1 text-xs"
+                                                >
+                                                    {processing ? 'Deleting…' : 'Delete'}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                            </>
+                        )}
                     </div>
                 </TableCell>
             </TableRow>
 
-            {/* Use the shared EditPropertyModal instead of inline dialog */}
-            <EditPropertyModal
-                open={openEdit}
-                onOpenChange={setOpenEdit}
-                property={propertyData}
-                locations={locations}
-                users={users}
-                conditions={conditions}
-                funds={funds}
-                source="index" // Set source to 'index' for table edits
-                onSuccess={() => {
-                    // Modal already handles success notifications
-                }}
-            />
+            {/* Only show EditPropertyModal for non-readonly users */}
+            {!isReadOnly && (
+                <EditPropertyModal
+                    open={openEdit}
+                    onOpenChange={setOpenEdit}
+                    property={propertyData}
+                    locations={locations}
+                    users={users}
+                    conditions={conditions}
+                    funds={funds}
+                    source="index" // Set source to 'index' for table edits
+                    onSuccess={() => {
+                        // Modal already handles success notifications
+                    }}
+                />
+            )}
         </>
     );
 }
