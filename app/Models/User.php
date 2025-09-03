@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -49,6 +50,41 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get all properties assigned to this user
+     */
+    public function properties(): HasMany
+    {
+        return $this->hasMany(Property::class);
+    }
+
+    /**
+     * Get properties assigned to this user with their relationships
+     */
+    public function propertiesWithRelations()
+    {
+        return $this->properties()->with(['location', 'condition']);
+    }
+
+    /**
+     * Get properties count for this user
+     */
+    public function propertiesCount(): int
+    {
+        return $this->properties()->count();
+    }
+
+    /**
+     * Get recent properties for this user (last 30 days)
+     */
+    public function recentProperties()
+    {
+        return $this->properties()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->with(['location', 'condition'])
+            ->latest();
     }
 
     /**

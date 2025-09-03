@@ -13,12 +13,20 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class PropertyController extends Controller
 {
     public function index(Request $request): Response
     {
         $query = Property::with(['location', 'user', 'condition'])->latest();
+
+        // Filter properties based on user role
+        if (Auth::user()->isStaff()) {
+            // Staff can only see properties assigned to them
+            $query->where('user_id', Auth::id());
+        }
+        // Admin can see all properties (no additional filtering needed)
 
         // Handle search
         if ($search = $request->get('search')) {
@@ -67,7 +75,7 @@ class PropertyController extends Controller
             ];
         });
 
-        // Simplified queries - get all data, then transform
+        // Get dropdown data for forms
         $locations = Location::all()->map(function($location) {
             return [
                 'id' => $location->id,
@@ -82,7 +90,11 @@ class PropertyController extends Controller
             ];
         });
 
-        $users = User::select('id', 'name')->orderBy('name')->get();
+        // For staff users, only show themselves in users dropdown
+        // For admin users, show all users
+        $users = Auth::user()->isAdmin()
+            ? User::select('id', 'name')->orderBy('name')->get()
+            : User::where('id', Auth::id())->select('id', 'name')->get();
 
         $funds = [
             ['value' => 'Fund 101', 'label' => 'Fund 101'],
@@ -96,7 +108,11 @@ class PropertyController extends Controller
             'conditions' => $conditions,
             'funds' => $funds,
             'filters' => $request->only(['search']),
-            'totalCount' => $totalCount, // Add total count for "select all" functionality
+            'totalCount' => $totalCount,
+            'userRole' => Auth::user()->role, // Pass user role to frontend
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -106,6 +122,12 @@ class PropertyController extends Controller
     public function bulkData(Request $request): JsonResponse
     {
         $query = Property::with(['location', 'user', 'condition'])->latest();
+
+        // Filter properties based on user role
+        if (Auth::user()->isStaff()) {
+            // Staff can only see properties assigned to them
+            $query->where('user_id', Auth::id());
+        }
 
         // Handle search (same as index)
         if ($search = $request->get('search')) {
@@ -121,7 +143,7 @@ class PropertyController extends Controller
             });
         }
 
-        // If specific IDs are requested, filter by them
+        // If specific IDs are requested, filter by them (and ensure user has permission)
         if ($ids = $request->get('ids')) {
             $query->whereIn('id', $ids);
         }
@@ -146,6 +168,11 @@ class PropertyController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        // Staff users cannot create properties
+        if (Auth::user()->isStaff()) {
+            abort(403, 'Unauthorized action. Staff users cannot create properties.');
+        }
+
         // Normalize payload: cast numbers and turn "" into null for nullable fields
         $request->merge([
             'property_number'               => trim((string) $request->input('property_number')) ?: null,
@@ -195,6 +222,11 @@ class PropertyController extends Controller
 
     public function update(Request $request, Property $property): RedirectResponse
     {
+        // Staff users cannot update properties
+        if (Auth::user()->isStaff()) {
+            abort(403, 'Unauthorized action. Staff users cannot update properties.');
+        }
+
         // Normalize payload: cast numbers and turn "" into null for nullable fields
         $request->merge([
             'property_number'               => trim((string) $request->input('property_number')) ?: null,
@@ -257,6 +289,11 @@ class PropertyController extends Controller
 
     public function show(Property $property): Response
     {
+        // Check if staff user is trying to view a property not assigned to them
+        if (Auth::user()->isStaff() && $property->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action. You can only view properties assigned to you.');
+        }
+
         $property->load(['location', 'user', 'condition']);
 
         // Get dropdown data for edit modal
@@ -274,7 +311,10 @@ class PropertyController extends Controller
             ];
         });
 
-        $users = User::select('id', 'name')->orderBy('name')->get();
+        // For staff users, only show themselves in the users dropdown
+        $users = Auth::user()->isAdmin()
+            ? User::select('id', 'name')->orderBy('name')->get()
+            : User::where('id', Auth::id())->select('id', 'name')->get();
 
         $funds = [
             ['value' => 'Fund 101', 'label' => 'Fund 101'],
@@ -313,6 +353,10 @@ class PropertyController extends Controller
             'users' => $users,
             'conditions' => $conditions,
             'funds' => $funds,
+            'userRole' => Auth::user()->role,
+            'auth' => [
+                'user' => Auth::user(),
+            ],
         ]);
     }
 
@@ -353,6 +397,7 @@ class PropertyController extends Controller
 
     public function destroy(Property $property): RedirectResponse
     {
+        // Only admin users can delete properties (this route is already protected by middleware)
         $property->delete(); // soft delete
 
         return redirect()->route('properties.index')
