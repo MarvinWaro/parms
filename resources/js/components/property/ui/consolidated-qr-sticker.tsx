@@ -1,3 +1,5 @@
+// File: C:\Users\MARVIN\projects\parms\resources\js\components\property\ui\consolidated-qr-sticker.tsx
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -22,6 +24,7 @@ export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRSt
     const printRef = useRef<HTMLDivElement>(null);
 
     const handleOpenQR = () => {
+        // Open the public property view in a new tab
         window.open(propertyData.qr_code_url, '_blank');
     };
 
@@ -543,7 +546,7 @@ export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRSt
                         />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <p className="mb-3 text-sm text-blue-600 font-medium">📱 Scan to view property details</p>
+                        <p className="mb-3 text-sm text-blue-600 font-medium">📱 Permanent QR code — Always shows current property info</p>
                         <Button
                             variant="outline"
                             size="sm"
@@ -551,7 +554,7 @@ export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRSt
                             className="h-8 w-full text-xs border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
                         >
                             <ExternalLink className="mr-2 h-3 w-3" />
-                            Open Link
+                            View Public Page
                         </Button>
                     </div>
                 </div>
@@ -619,13 +622,22 @@ export default function ConsolidatedQRSticker({ propertyData }: ConsolidatedQRSt
                                     <Printer className="mr-2 h-4 w-4" />
                                     Print Sticker
                                 </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleOpenQR}
+                                    className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 shadow-sm"
+                                >
+                                    <ExternalLink className="mr-2 h-4 w-4" />
+                                    View Public Page
+                                </Button>
                             </div>
                         </DialogContent>
                     </Dialog>
                 </div>
 
-                <div className="text-center text-xs text-blue-600/70 bg-blue-50/50 rounded-lg p-2">
-                    📏 Standard size: 4" × 2.5" — A4 sheet fits 8 stickers (2×4 layout)
+                <div className="text-center text-xs text-blue-600/70 bg-blue-50/50 rounded-lg p-2 space-y-1">
+                    <div>📏 Standard size: 4" × 2.5" — A4 sheet fits 8 stickers (2×4 layout)</div>
+                    <div className="font-semibold text-green-700">✅ QR Code is permanent — No need to replace when property details change</div>
                 </div>
             </CardContent>
         </Card>

@@ -1,4 +1,5 @@
 <?php
+// File: C:\Users\MARVIN\projects\parms\app\Http\Controllers\PropertyController.php
 
 namespace App\Http\Controllers;
 
@@ -61,7 +62,8 @@ class PropertyController extends Controller
                 'item_description' => $property->item_description,
                 'remarks' => $property->remarks,
                 'color' => $property->color,
-                'qr_code_url' => $property->getQRCodeUrl(), // Add QR code URL
+                // QR code URL is PERSISTENT - never changes even when property details are updated
+                'qr_code_url' => $property->getQRCodeUrl(),
             ];
         });
 
@@ -130,6 +132,7 @@ class PropertyController extends Controller
                 'id' => $property->id,
                 'item_name' => $property->item_name,
                 'property_number' => $property->property_number,
+                // QR code URL remains the same for the lifetime of the property
                 'qr_code_url' => $property->getQRCodeUrl(),
                 'location' => $property->location->location ?? 'N/A',
                 'user' => $property->user->name ?? 'N/A',
@@ -234,6 +237,9 @@ class PropertyController extends Controller
             'source' => ['nullable','string','in:index,show'], // Add source validation
         ]);
 
+        // Update property details - QR code URL remains unchanged
+        // The physical sticker never needs to be replaced because the QR code URL
+        // is based only on the property ID, which never changes
         $property->update($validated);
 
         // Determine redirect based on source parameter
@@ -289,7 +295,8 @@ class PropertyController extends Controller
             'item_description' => $property->item_description,
             'remarks' => $property->remarks,
             'color' => $property->color,
-            'qr_code_url' => $property->getQRCodeUrl(), // Add QR code URL
+            // QR code URL never changes - safe to print and stick permanently
+            'qr_code_url' => $property->getQRCodeUrl(),
             'location' => $property->location->location ?? 'N/A',
             'user' => $property->user->name ?? 'N/A',
             'condition' => $property->condition->condition ?? 'N/A',
@@ -309,10 +316,16 @@ class PropertyController extends Controller
         ]);
     }
 
+    /**
+     * Public QR code view - Always shows CURRENT property data
+     * This is the magic: QR code URL never changes, but data shown is always fresh
+     */
     public function publicView(Property $property): Response
     {
+        // Load fresh relationships to get current data
         $property->load(['location', 'user', 'condition']);
 
+        // Return current property data - this updates automatically when property is modified
         $propertyData = [
             'id' => $property->id,
             'property_number' => $property->property_number,

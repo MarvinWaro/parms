@@ -21,7 +21,7 @@ class Property extends Model
         'acquisition_date',
         'acquisition_cost',
         'unit_of_measure',
-        'quantity_per_physical_count', // Added quantity field
+        'quantity_per_physical_count',
         'fund',
         'location_id',
         'user_id',
@@ -33,7 +33,7 @@ class Property extends Model
     protected $casts = [
         'acquisition_date' => 'date',
         'acquisition_cost' => 'decimal:2',
-        'quantity_per_physical_count' => 'integer', // Added quantity cast
+        'quantity_per_physical_count' => 'integer',
     ];
 
     public function location(): BelongsTo
@@ -81,11 +81,35 @@ class Property extends Model
 
     /**
      * Generate QR code URL for this property
-     * This remains constant regardless of property detail changes
-     * Uses the ULID for permanent identification
+     *
+     * IMPORTANT: This URL remains PERMANENT for the lifetime of the property.
+     * - Uses only the ULID (never changes)
+     * - Physical QR stickers never need replacement
+     * - Property details can be updated freely
+     * - Scanning always shows current data via public route
+     *
+     * @return string Permanent QR code URL
      */
     public function getQRCodeUrl(): string
     {
         return url("/qr/{$this->id}");
+    }
+
+    /**
+     * Check if this property's QR code has been printed
+     * (Optional: you could track this if needed)
+     */
+    public function isQRCodePrinted(): bool
+    {
+        // Could add a 'qr_printed_at' timestamp field if you want to track this
+        return true; // For now, assume all can be printed
+    }
+
+    /**
+     * Get a human-readable identifier for this property
+     */
+    public function getDisplayName(): string
+    {
+        return "{$this->item_name} ({$this->property_number})";
     }
 }
