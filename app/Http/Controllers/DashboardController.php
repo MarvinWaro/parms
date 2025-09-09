@@ -32,22 +32,24 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Get activity date filter from request (default to today)
-        $activityDate = $request->get('activity_date', Carbon::today()->format('Y-m-d'));
+        // Get activity date range from request (default to last 7 days)
+        $fromDate = $request->get('from_date', Carbon::today()->subDays(6)->format('Y-m-d'));
+        $toDate = $request->get('to_date', Carbon::today()->format('Y-m-d'));
 
         // Analytics Data
-        $analytics = $this->getAnalyticsData($activityDate);
+        $analytics = $this->getAnalyticsData($fromDate, $toDate);
 
         return Inertia::render('dashboard', [
             'users' => $users,
             'analytics' => $analytics,
             'filters' => [
-                'activity_date' => $activityDate,
+                'from_date' => $fromDate,
+                'to_date' => $toDate,
             ],
         ]);
     }
 
-    private function getAnalyticsData(string $activityDate): array
+    private function getAnalyticsData(string $fromDate, string $toDate): array
     {
         // Basic Counts
         $totalProperties = Property::count();
@@ -65,47 +67,6 @@ class DashboardController extends Controller
             round((($propertiesLastMonth / max($totalProperties - $propertiesLastMonth, 1)) * 100), 1) : 0;
         $userGrowth = $totalUsers > 0 ?
             round((($usersLastMonth / max($totalUsers - $usersLastMonth, 1)) * 100), 1) : 0;
-
-        // Properties by condition (for pie chart)
-        $propertiesByCondition = DB::table('properties')
-            ->join('conditions', 'properties.condition_id', '=', 'conditions.id')
-            ->select('conditions.condition as name', DB::raw('count(*) as count'))
-            ->whereNull('properties.deleted_at')
-            ->groupBy('conditions.id', 'conditions.condition')
-            ->get()
-            ->map(function ($item, $index) {
-                $colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1'];
-                return [
-                    'condition' => $item->name,
-                    'count' => $item->count,
-                    'fill' => $colors[$index % count($colors)]
-                ];
-            });
-
-        // Properties by location (for radar chart)
-        $propertiesByLocation = DB::table('properties')
-            ->join('locations', 'properties.location_id', '=', 'locations.id')
-            ->select('locations.location as location', DB::raw('count(*) as count'))
-            ->whereNull('properties.deleted_at')
-            ->groupBy('locations.id', 'locations.location')
-            ->orderBy('count', 'desc')
-            ->limit(6)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'location' => $item->location,
-                    'total' => $item->count,
-                    'percentage' => 0 // Will calculate after we have all data
-                ];
-            });
-
-        // Calculate percentages for location data
-        $totalLocationProperties = $propertiesByLocation->sum('total');
-        $propertiesByLocation = $propertiesByLocation->map(function ($item) use ($totalLocationProperties) {
-            $item['percentage'] = $totalLocationProperties > 0 ?
-                round(($item['total'] / $totalLocationProperties) * 100, 1) : 0;
-            return $item;
-        });
 
         // Properties added over time (for area chart) - Last 90 days
         $propertiesOverTime = [];
@@ -127,12 +88,14 @@ class DashboardController extends Controller
             $day['cumulative'] = $runningTotal;
         }
 
-        // Recent activities for specific date (limit 5 per day)
-        $targetDate = Carbon::parse($activityDate);
+        // Recent activities for date range (limit 50 total, ordered by latest)
+        $startDate = Carbon::parse($fromDate)->startOfDay();
+        $endDate = Carbon::parse($toDate)->endOfDay();
+
         $recentActivities = Property::with(['user', 'location'])
-            ->whereDate('created_at', $targetDate->format('Y-m-d'))
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->latest()
-            ->limit(5)
+            ->limit(50)
             ->get()
             ->map(function ($property) {
                 return [
@@ -143,20 +106,6 @@ class DashboardController extends Controller
                     'location' => $property->location->location ?? 'No Location',
                     'created_at' => $property->created_at->format('M j, Y g:i A'),
                     'created_date' => $property->created_at->format('Y-m-d'),
-                ];
-            });
-
-        // Get available dates for activity filter (last 30 days with activities)
-        $availableDates = Property::select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
-            ->where('created_at', '>=', Carbon::now()->subDays(30))
-            ->groupBy(DB::raw('DATE(created_at)'))
-            ->orderBy('date', 'desc')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'date' => $item->date,
-                    'count' => $item->count,
-                    'formatted' => Carbon::parse($item->date)->format('M j, Y'),
                 ];
             });
 
@@ -184,11 +133,8 @@ class DashboardController extends Controller
                 'property_growth' => $propertyGrowth,
                 'user_growth' => $userGrowth,
             ],
-            'properties_by_condition' => $propertiesByCondition,
-            'properties_by_location' => $propertiesByLocation,
             'properties_over_time' => $propertiesOverTime,
             'recent_activities' => $recentActivities,
-            'available_activity_dates' => $availableDates,
             'fund_distribution' => $fundDistribution,
         ];
     }
