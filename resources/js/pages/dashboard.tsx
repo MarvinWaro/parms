@@ -9,8 +9,8 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, usePage, router } from '@inertiajs/react';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
-import { TrendingUp, Users, DollarSign, Package, MapPin, Activity, AlertCircle, Calendar } from 'lucide-react';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Users, DollarSign, Package, AlertCircle, Calendar, Banknote } from 'lucide-react';
 import { useState } from 'react';
 import UsersTable from '@/components/dashboard/users-table';
 
@@ -39,18 +39,6 @@ type AnalyticsTotals = {
     user_growth: number;
 };
 
-type PropertyCondition = {
-    condition: string;
-    count: number;
-    fill: string;
-};
-
-type PropertyLocation = {
-    location: string;
-    total: number;
-    percentage: number;
-};
-
 type PropertyOverTime = {
     date: string;
     properties: number;
@@ -67,12 +55,6 @@ type RecentActivity = {
     created_date: string;
 };
 
-type AvailableDate = {
-    date: string;
-    count: number;
-    formatted: string;
-};
-
 type FundDistribution = {
     fund: string;
     count: number;
@@ -81,11 +63,8 @@ type FundDistribution = {
 
 type Analytics = {
     totals: AnalyticsTotals;
-    properties_by_condition: PropertyCondition[];
-    properties_by_location: PropertyLocation[];
     properties_over_time: PropertyOverTime[];
     recent_activities: RecentActivity[];
-    available_activity_dates: AvailableDate[];
     fund_distribution: FundDistribution[];
 };
 
@@ -93,7 +72,8 @@ type PageProps = {
     users?: User[];
     analytics: Analytics;
     filters: {
-        activity_date: string;
+        from_date: string;
+        to_date: string;
     };
 };
 
@@ -112,12 +92,15 @@ export default function Dashboard() {
             property_growth: 0,
             user_growth: 0,
         },
-        properties_by_condition: analytics?.properties_by_condition || [],
-        properties_by_location: analytics?.properties_by_location || [],
         properties_over_time: analytics?.properties_over_time || [],
         recent_activities: analytics?.recent_activities || [],
-        available_activity_dates: analytics?.available_activity_dates || [],
         fund_distribution: analytics?.fund_distribution || [],
+    };
+
+    // Safe filters with fallbacks
+    const safeFilters = {
+        from_date: filters?.from_date || new Date().toISOString().split('T')[0],
+        to_date: filters?.to_date || new Date().toISOString().split('T')[0],
     };
 
     // Filter chart data based on selected time range with safety check
@@ -152,32 +135,32 @@ export default function Dashboard() {
         );
     };
 
-    // Handle activity date filter change
-    const handleActivityDateChange = (date: string) => {
-        router.get('/dashboard', { activity_date: date }, {
+    // Handle activity date range filter change
+    const handleDateRangeChange = (field: 'from_date' | 'to_date', value: string) => {
+        const newFilters = { ...safeFilters, [field]: value };
+
+        router.get('/dashboard', newFilters, {
             preserveState: true,
             preserveScroll: true,
         });
     };
 
-    // Prepare radar chart data (take top 6 locations) with safety check
-    const radarData = safeAnalytics.properties_by_location.length > 0
-        ? safeAnalytics.properties_by_location.slice(0, 6).map(item => ({
-            location: item.location.length > 10 ? item.location.substring(0, 10) + '...' : item.location,
-            properties: item.total,
-            percentage: item.percentage,
-        }))
-        : [];
-
-    // Validation for pie chart data
-    const hasPieChartData = safeAnalytics.properties_by_condition.length > 0 &&
-        safeAnalytics.properties_by_condition.every(item =>
-            item &&
-            typeof item.condition === 'string' &&
-            typeof item.count === 'number' &&
-            item.count > 0 &&
-            typeof item.fill === 'string'
-        );
+    // Format date safely
+    const formatDate = (dateStr: string) => {
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                return 'Invalid Date';
+            }
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch (error) {
+            return 'Invalid Date';
+        }
+    };
 
     // Show loading state if no analytics data
     if (!analytics) {
@@ -364,156 +347,45 @@ export default function Dashboard() {
                     </Card>
                 )}
 
-                {/* Pie Chart and Radar Chart Row */}
-                <div className="grid gap-6 md:grid-cols-2">
-                    {/* Pie Chart - Properties by Condition */}
-                    <Card className="flex flex-col">
-                        <CardHeader className="items-center pb-0">
-                            <CardTitle>Properties by Condition</CardTitle>
-                            <CardDescription>Current condition status distribution</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-1 pb-0">
-                            {hasPieChartData ? (
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <PieChart>
-                                        <Tooltip
-                                            formatter={(value, name) => [`${value} properties`, name]}
-                                        />
-                                        <Pie
-                                            data={safeAnalytics.properties_by_condition}
-                                            dataKey="count"
-                                            nameKey="condition"
-                                            cx="50%"
-                                            cy="50%"
-                                            outerRadius={80}
-                                            label={({ condition, count, percent }) =>
-                                                `${condition}: ${count} (${(percent * 100).toFixed(0)}%)`
-                                            }
-                                        >
-                                            {safeAnalytics.properties_by_condition.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                                            ))}
-                                        </Pie>
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="h-[250px] flex items-center justify-center">
-                                    <div className="text-center">
-                                        <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                                        <p className="text-sm text-muted-foreground">No condition data available</p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Add properties with conditions to see this chart
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                        <CardContent className="flex-col gap-2 text-sm pt-0">
-                            <div className="flex items-center gap-2 leading-none font-medium">
-                                Total: {safeAnalytics.totals.properties} properties <Activity className="h-4 w-4" />
-                            </div>
-                            <div className="text-muted-foreground leading-none">
-                                Property condition distribution
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Radar Chart - Properties by Location */}
-                    <Card>
-                        <CardHeader className="items-center pb-4">
-                            <CardTitle>Properties by Location</CardTitle>
-                            <CardDescription>
-                                Distribution across {safeAnalytics.totals.locations} locations
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pb-0">
-                            {radarData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <RadarChart
-                                        data={radarData}
-                                        margin={{
-                                            top: 10,
-                                            right: 10,
-                                            bottom: 10,
-                                            left: 10,
-                                        }}
-                                    >
-                                        <Tooltip
-                                            formatter={(value, name) => [
-                                                name === 'properties' ? `${value} properties` : `${value}%`,
-                                                name === 'properties' ? 'Count' : 'Percentage'
-                                            ]}
-                                        />
-                                        <PolarAngleAxis dataKey="location" />
-                                        <PolarGrid />
-                                        <Radar
-                                            dataKey="properties"
-                                            stroke="#8884d8"
-                                            fill="#8884d8"
-                                            fillOpacity={0.6}
-                                            name="Properties Count"
-                                        />
-                                    </RadarChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="h-[250px] flex items-center justify-center">
-                                    <div className="text-center">
-                                        <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                                        <p className="text-sm text-muted-foreground">No location data available</p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Add properties with locations to see this chart
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                        <CardContent className="flex-col gap-2 text-sm pt-0">
-                            <div className="flex items-center gap-2 leading-none font-medium">
-                                Top {radarData.length} locations shown <MapPin className="h-4 w-4" />
-                            </div>
-                            <div className="text-muted-foreground flex items-center gap-2 leading-none">
-                                {safeAnalytics.totals.locations} total locations
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Recent Activities with Date Filter */}
+                {/* Recent Activities with Date Range Filter */}
                 <Card>
                     <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
                         <div className="grid flex-1 gap-1">
                             <CardTitle>Recent Property Registrations</CardTitle>
                             <CardDescription>
-                                Daily property transactions (showing up to 5 per day)
+                                Property transactions within selected date range (max 50 results)
                             </CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <Select value={filters.activity_date} onValueChange={handleActivityDateChange}>
-                                <SelectTrigger
-                                    className="w-[200px] rounded-lg sm:ml-auto"
-                                    aria-label="Select date"
-                                >
-                                    <SelectValue placeholder="Select date" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    {safeAnalytics.available_activity_dates.map((dateOption) => (
-                                        <SelectItem key={dateOption.date} value={dateOption.date} className="rounded-lg">
-                                            {dateOption.formatted} ({dateOption.count} {dateOption.count === 1 ? 'property' : 'properties'})
-                                        </SelectItem>
-                                    ))}
-                                    {safeAnalytics.available_activity_dates.length === 0 && (
-                                        <SelectItem value="no-data" disabled className="rounded-lg">
-                                            No recent activities
-                                        </SelectItem>
-                                    )}
-                                </SelectContent>
-                            </Select>
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm font-medium">From:</label>
+                                <input
+                                    type="date"
+                                    value={safeFilters.from_date}
+                                    onChange={(e) => handleDateRangeChange('from_date', e.target.value)}
+                                    className="rounded-lg border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm font-medium">To:</label>
+                                <input
+                                    type="date"
+                                    value={safeFilters.to_date}
+                                    onChange={(e) => handleDateRangeChange('to_date', e.target.value)}
+                                    className="rounded-lg border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                />
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent>
                         {safeAnalytics.recent_activities.length > 0 ? (
                             <div className="space-y-4">
+                                <div className="text-sm text-muted-foreground mb-4">
+                                    Showing {safeAnalytics.recent_activities.length} properties registered between{' '}
+                                    {formatDate(safeFilters.from_date)} and{' '}
+                                    {formatDate(safeFilters.to_date)}
+                                </div>
                                 {safeAnalytics.recent_activities.map((activity) => (
                                     <div key={activity.id} className="flex items-center space-x-4 rounded-lg border p-3">
                                         <div className="flex-1 space-y-1">
@@ -535,14 +407,12 @@ export default function Dashboard() {
                                 <div className="text-center">
                                     <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                                     <p className="text-sm text-muted-foreground">
-                                        No property registrations found for {new Date(filters.activity_date).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })}
+                                        No property registrations found between{' '}
+                                        {formatDate(safeFilters.from_date)} and{' '}
+                                        {formatDate(safeFilters.to_date)}
                                     </p>
                                     <p className="text-xs text-muted-foreground mt-1">
-                                        Select a different date to view past activities
+                                        Try adjusting the date range to see more activities
                                     </p>
                                 </div>
                             </div>
@@ -557,7 +427,7 @@ export default function Dashboard() {
                             <Card key={fund.fund}>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">{fund.fund}</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                    <Banknote className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{fund.count} properties</div>
