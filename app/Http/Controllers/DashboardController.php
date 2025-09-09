@@ -9,11 +9,12 @@ use App\Models\Condition;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         // Get users for the table
         $users = User::select('id', 'name', 'email', 'role', 'created_at')
@@ -31,16 +32,22 @@ class DashboardController extends Controller
                 ];
             });
 
+        // Get activity date filter from request (default to today)
+        $activityDate = $request->get('activity_date', Carbon::today()->format('Y-m-d'));
+
         // Analytics Data
-        $analytics = $this->getAnalyticsData();
+        $analytics = $this->getAnalyticsData($activityDate);
 
         return Inertia::render('dashboard', [
             'users' => $users,
             'analytics' => $analytics,
+            'filters' => [
+                'activity_date' => $activityDate,
+            ],
         ]);
     }
 
-    private function getAnalyticsData(): array
+    private function getAnalyticsData(string $activityDate): array
     {
         // Basic Counts
         $totalProperties = Property::count();
@@ -120,10 +127,12 @@ class DashboardController extends Controller
             $day['cumulative'] = $runningTotal;
         }
 
-        // Recent activities (last 10 properties)
+        // Recent activities for specific date (limit 5 per day)
+        $targetDate = Carbon::parse($activityDate);
         $recentActivities = Property::with(['user', 'location'])
+            ->whereDate('created_at', $targetDate->format('Y-m-d'))
             ->latest()
-            ->limit(10)
+            ->limit(5)
             ->get()
             ->map(function ($property) {
                 return [
@@ -132,7 +141,22 @@ class DashboardController extends Controller
                     'property_number' => $property->property_number,
                     'user' => $property->user->name ?? 'Unassigned',
                     'location' => $property->location->location ?? 'No Location',
-                    'created_at' => $property->created_at->diffForHumans(),
+                    'created_at' => $property->created_at->format('M j, Y g:i A'),
+                    'created_date' => $property->created_at->format('Y-m-d'),
+                ];
+            });
+
+        // Get available dates for activity filter (last 30 days with activities)
+        $availableDates = Property::select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
+            ->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'date' => $item->date,
+                    'count' => $item->count,
+                    'formatted' => Carbon::parse($item->date)->format('M j, Y'),
                 ];
             });
 
@@ -164,6 +188,7 @@ class DashboardController extends Controller
             'properties_by_location' => $propertiesByLocation,
             'properties_over_time' => $propertiesOverTime,
             'recent_activities' => $recentActivities,
+            'available_activity_dates' => $availableDates,
             'fund_distribution' => $fundDistribution,
         ];
     }
