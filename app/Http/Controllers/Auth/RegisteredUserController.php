@@ -40,12 +40,14 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'staff', // All registered users are staff
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Redirect to staff dashboard for newly registered users
+        return redirect()->route('staff.dashboard');
     }
 }

@@ -10,25 +10,28 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Keep your existing test user if you still want it
+        // Test User (staff role)
         User::factory()->create([
             'name'  => 'Test User',
             'email' => 'test@example.com',
+            'role'  => 'staff', // Explicitly set role
         ]);
 
-        // CHED Administrator account (idempotent)
+        // Admin User (admin role) - FIXED: Added role
         User::updateOrCreate(
-            ['email' => 'admin@gmail.com'], // lookup by unique email
+            ['email' => 'admin@gmail.com'], 
             [
                 'name'              => 'Ched Admin',
                 'password'          => Hash::make('12345678'),
-                'email_verified_at' => now(), // optional, skip email verification
+                'role'              => 'admin', // ✅ FIXED: Explicitly set admin role
+                'email_verified_at' => now(),
             ]
         );
 
-        // Other seeders…
+        // Other seeders
         $this->call([
             ConditionSeeder::class,
+            // Remove AdminUserSeeder::class to avoid duplicates
         ]);
     }
 }
